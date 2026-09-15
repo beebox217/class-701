@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Bell,
   BookOpen,
+  BookText,
   Check,
   ChevronRight,
   CircleDollarSign,
@@ -125,13 +126,13 @@ function InstallPrompt({ visible, isIos, dismiss, install }: { visible: boolean;
   if (!visible) return null;
   if (isIos) {
     return <div className="install-banner" role="status" aria-live="polite">
-      <span className="banner-icon"><Smartphone size={20} /></span>
+      <span className="banner-icon"><BookText size={20} strokeWidth={2.2} /></span>
       <div className="banner-copy"><strong>加入主畫面，離線也能查看</strong><span>點擊下方 <Share size={12} style={{ display: "inline-block", verticalAlign: "-2px" }} /> 分享鍵 → 滑到「加入主畫面」</span></div>
       <div className="banner-actions"><button className="dismiss" onClick={dismiss} aria-label="關閉"><X size={15} /></button></div>
     </div>;
   }
   return <div className="install-banner" role="status" aria-live="polite">
-    <span className="banner-icon"><Download size={20} /></span>
+    <span className="banner-icon"><BookText size={20} strokeWidth={2.2} /></span>
     <div className="banner-copy"><strong>安裝應用程式</strong><span>加到桌面，開啟更快也可離線檢視，完全不需另外下載。</span></div>
     <div className="banner-actions"><button className="primary-button" style={{ padding: "10px 14px", fontSize: 13 }} onClick={install}><Download size={14} />安裝</button><button className="dismiss" onClick={dismiss} aria-label="稍後再說"><X size={15} /></button></div>
   </div>;
@@ -157,7 +158,7 @@ function Shell({ children, share }: { children: ReactNode; share?: { onOpen: () 
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand-lockup"><div className="brand-mark"><BookOpen size={19} strokeWidth={2.5} /></div><div><p className="eyebrow">MINGDE JUNIOR HIGH</p><h1>{className} 班費管理</h1></div></div>
+      <div className="brand-lockup"><div className="brand-mark"><BookText size={19} strokeWidth={2.2} /></div><div><p className="eyebrow">MINGDE JUNIOR HIGH</p><h1>{className} 班費管理</h1></div></div>
       <div className="header-actions"><button className="icon-button" aria-label="通知" onClick={() => toast("目前沒有新的通知")}><Bell size={19} /></button><button className="avatar" aria-label="使用者選單" onClick={() => setMenuOpen(!menuOpen)}>{displayName[0] || "劉"}</button></div>
       {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : "系統管理者"}</span><button onClick={() => void logout()}>登出系統</button></div>}
     </header>
@@ -185,9 +186,15 @@ function Overview() {
     return { ...item, paidCount, rate };
   }) : [];
   const anyProgress = progressPerPayment[0];
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 3 && h < 11) return "早安";
+    if (h >= 11 && h < 19) return "午安";
+    return "晚安";
+  }, []);
 
   return <>
-    <section className="welcome-card"><div><span className="soft-label"><Sparkles size={13} /> 本月摘要</span><h3>早安，{displayName}</h3><p>{loading ? "正在讀取班費資料…" : usingDemo ? "目前為示範模式，連線後即可同步資料。" : "班費帳務資料已同步完成。"}</p></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="mini-orbit"><CircleDollarSign size={28} /></div></div></section>
+    <section className="welcome-card"><div><span className="soft-label"><Sparkles size={13} /> 本月摘要</span><h3>{greeting}，{displayName}</h3><p>{loading ? "正在讀取班費資料…" : usingDemo ? "目前為示範模式，連線後即可同步資料。" : "班費帳務資料已同步完成。"}</p></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="mini-orbit"><CircleDollarSign size={28} /></div></div></section>
     <section className="metric-grid"><div className="metric-card accent"><span>目前結餘</span><strong>NT$ {(income - expense).toLocaleString()}</strong><small><ArrowUpRight size={14} />即時資料</small></div><div className="metric-card"><span>本月收入</span><strong>NT$ {income.toLocaleString()}</strong><small className="positive"><ArrowUpRight size={14} />{transactions.filter((item) => item.type === "in").length} 筆收入</small></div><div className="metric-card"><span>本月支出</span><strong>NT$ {expense.toLocaleString()}</strong><small className="negative"><ArrowDownLeft size={14} />{transactions.filter((item) => item.type === "out").length} 筆支出</small></div></section>
     <div className="section-row"><h3>最近收支</h3><Link href="/transactions" className="text-link">查看全部 <ChevronRight size={15} /></Link></div>
     <div className="transaction-list">{transactions.length ? transactions.slice(0, 3).map((item) => <TransactionRow key={item.id} item={item} />) : <div className="empty-state"><ReceiptText size={30} /><strong>尚無資料</strong><span>請至收支頁新增第一筆收支紀錄。</span></div>}</div>
@@ -1214,12 +1221,36 @@ export default function Home() {
     const link = shareUrl || buildShareUrl();
     window.open(link, "_blank", "noopener");
   }
+  function shareToLine() {
+    const link = shareUrl || buildShareUrl();
+    const classNameRaw = String(settings.className ?? "701 班");
+    const balanceRaw = income - expense;
+    const message = `【${classNameRaw} 班費公開頁】
+結餘：$${balanceRaw.toLocaleString()}｜收入 $${income.toLocaleString()}｜支出 $${expense.toLocaleString()}
+點擊連結查看完整收支明細與繳費進度（唯讀免登入）：`;
+    const url = `https://line.me/R/msg/text/?${encodeURIComponent(message)}%0A${encodeURIComponent(link)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+  async function nativeShare() {
+    const link = shareUrl || buildShareUrl();
+    const classNameRaw = String(settings.className ?? "701 班");
+    const balanceRaw = income - expense;
+    if (!navigator.share) return;
+    try {
+      await navigator.share({
+        title: `${classNameRaw} 班費公開頁`,
+        text: `結餘 $${balanceRaw.toLocaleString()}｜收入 $${income.toLocaleString()}｜支出 $${expense.toLocaleString()} · 點擊查看完整收支明細與繳費進度（唯讀免登入）`,
+        url: link,
+      });
+    } catch (_err) { /* ignore */ }
+  }
 
   const page = useMemo(() => location === "/transactions" ? <TransactionsPage /> : location === "/students" ? <StudentsPage /> : location === "/reports" ? <ReportsPage /> : location === "/settings" ? <SettingsPage /> : <Overview />, [location]);
   const install = usePwaInstallBanner();
+  const canNativeShare = useMemo(() => typeof navigator !== "undefined" && Boolean(navigator.share), []);
   return <>
     <Shell share={location === "/" ? { onOpen: openShare } : undefined}>{page}</Shell>
-    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享公開頁面</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shareUrl} onClick={(e) => (e.target as HTMLInputElement).select()} /></label><div style={{ display: "flex", gap: 10, marginTop: 6 }}><button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽</button><button className="primary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button></div></div></div>}
+    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享到 LINE / 社群</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shareUrl} onClick={(e) => (e.target as HTMLInputElement).select()} /></label><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}><button className="primary-button wide" style={{ background: "#06C755", boxShadow: "0 7px 14px rgba(6,199,85,.22)" }} onClick={shareToLine}><Share2 size={15} /> LINE 分享</button>{canNativeShare ? <button className="secondary-button wide" onClick={nativeShare}><Share2 size={15} /> 系統分享</button> : <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button>}<button className="secondary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button>{canNativeShare ? <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button> : null}</div></div></div>}
     <InstallPrompt visible={install.visible} isIos={install.isIos} dismiss={install.dismiss} install={install.install} />
   </>;
 }

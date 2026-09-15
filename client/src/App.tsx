@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Redirect, Route, Router, Switch, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
+import { BookText } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -15,7 +16,7 @@ function ProtectedApp() {
   const { settings } = useClassData();
   const [location] = useLocation();
   const className = String(settings.className ?? "701 班");
-  if (loading) return <div className="auth-loading"><div className="brand-mark"><span>{className.replace(/\D+/g, "").slice(0, 1) || "7"}</span></div><p>正在確認登入狀態…</p></div>;
+  if (loading) return <div className="auth-loading"><div className="brand-mark" style={{ width: 64, height: 64, borderRadius: 20 }}><BookText size={28} strokeWidth={2.2} /></div><p>正在確認登入狀態…</p></div>;
   if (!user && location !== "/login") return <Redirect to="/login" />;
   if (user && location === "/login") return <Redirect to="/" />;
 
