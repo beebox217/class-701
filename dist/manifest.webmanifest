@@ -1,0 +1,15 @@
+{
+  "name": "明德國中 701 班費管理系統",
+  "short_name": "701 班費",
+  "description": "明德國中 701 班班費與繳費管理工具",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f8f5",
+  "theme_color": "#247a72",
+  "icons": [
+    { "src": "./pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
