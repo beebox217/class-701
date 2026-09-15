@@ -13,7 +13,6 @@ import {
   FileBarChart,
   Filter,
   LayoutDashboard,
-  Menu,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -68,7 +67,7 @@ function Shell({ children }: { children: ReactNode }) {
       <div className="header-actions"><button className="icon-button" aria-label="通知" onClick={() => toast("目前沒有新的通知")}><Bell size={19} /></button><button className="avatar" aria-label="使用者選單" onClick={() => setMenuOpen(!menuOpen)}>{displayName[0] || "劉"}</button></div>
       {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : "系統管理者"}</span><button onClick={() => void logout()}>登出系統</button></div>}
     </header>
-    <main className="main-content"><div className="page-heading"><div><p className="eyebrow">{yearLabel} · {className}</p><h2>{active}</h2></div><button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)}><Menu size={20} /></button></div>{children}</main>
+    <main className="main-content"><div className="page-heading"><div><p className="eyebrow">{yearLabel} · {className}</p><h2>{active}</h2></div></div>{children}</main>
     <nav className="bottom-nav" aria-label="主要導覽">{navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? "nav-item active" : "nav-item"}><Icon size={19} strokeWidth={location === href ? 2.5 : 2} /><span>{label}</span></Link>)}</nav>
     <footer className="footer"><span>{className} 班級自治會</span><span className="status-dot"><i /> {usingDemo ? "示範模式" : "已連線"}</span></footer>
   </div>;
