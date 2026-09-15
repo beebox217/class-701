@@ -10,6 +10,7 @@ import {
   Check,
   ChevronRight,
   CircleDollarSign,
+  CirclePlus,
   FileBarChart,
   Filter,
   LayoutDashboard,
@@ -17,11 +18,18 @@ import {
   Pencil,
   Plus,
   ReceiptText,
+  Search,
   Settings,
+  Share2,
+  Copy,
+  ExternalLink,
   Sparkles,
   Trash2,
   Users,
   X,
+  Download,
+  Smartphone,
+  Share,
 } from "lucide-react";
 import { deleteUser, updateEmail, updatePassword, type User } from "firebase/auth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,7 +51,93 @@ function ConfirmDialog({ open, title, message, confirmText = "確認刪除", can
   return <div className="modal-backdrop" onClick={onCancel}><div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}><div className="confirm-head" style={{display:"flex",gap:12,alignItems:"flex-start"}}><span className="confirm-icon" style={{flex:"0 0 auto",width:46,height:46,borderRadius:14,background: danger ? "#fdece7" : "#e2f0e9",color: danger ? "var(--coral)" : "var(--teal)",display:"grid",placeItems:"center"}}><AlertTriangle size={20}/></span><div style={{flex:1}}><h3 style={{margin:"0 0 6px",fontSize:19,letterSpacing:"-.02em"}}>{title}</h3>{message && <p style={{margin:0,color:"var(--muted)",fontSize:14,lineHeight:1.55}}>{message}</p>}</div></div><div style={{display:"flex",gap:10,marginTop:22}}><button className="secondary-button wide" onClick={onCancel}>{cancelText}</button><button className={"primary-button wide " + (danger ? "danger-button" : "")} style={danger ? {background:"var(--coral)",boxShadow:"0 7px 14px rgba(231,120,98,.22)"} : undefined} onClick={onConfirm}>{confirmText}</button></div></div></div>;
 }
 
-function Shell({ children }: { children: ReactNode }) {
+type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }>; };
+declare global { interface Window { __PWA_INSTALL_PROMPT__?: InstallPromptEvent | null; } }
+
+const PWA_DISMISS_KEY = "class701_pwa_dismiss_until";
+const PWA_INSTALLED_KEY = "class701_pwa_installed";
+function usePwaInstallBanner() {
+  const [visible, setVisible] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ua = navigator.userAgent || "";
+    const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && "ontouchend" in document);
+    setIsIos(ios);
+    const isStandalone = Boolean(
+      (window.navigator as Navigator & { standalone?: boolean }).standalone ||
+        window.matchMedia?.("(display-mode: standalone)").matches,
+    );
+    if (isStandalone) return;
+    try {
+      if (window.localStorage.getItem(PWA_INSTALLED_KEY)) return;
+      const raw = window.localStorage.getItem(PWA_DISMISS_KEY);
+      if (raw) {
+        const until = Number(raw) || 0;
+        if (until > Date.now()) return;
+      }
+    } catch { /* ignore */ }
+
+    const checkAvailable = () => {
+      if (window.__PWA_INSTALL_PROMPT__) {
+        setVisible(true);
+        return;
+      }
+      if (ios) {
+        setVisible(true);
+      }
+    };
+    checkAvailable();
+    const onAvailable = () => setVisible(true);
+    const onInstalled = () => {
+      setVisible(false);
+      try { window.localStorage.setItem(PWA_INSTALLED_KEY, String(Date.now())); } catch { /* ignore */ }
+    };
+    window.addEventListener("pwa-install-available", onAvailable);
+    window.addEventListener("pwa-installed", onInstalled);
+    return () => {
+      window.removeEventListener("pwa-install-available", onAvailable);
+      window.removeEventListener("pwa-installed", onInstalled);
+    };
+  }, []);
+
+  const dismiss = () => {
+    const until = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    try { window.localStorage.setItem(PWA_DISMISS_KEY, String(until)); } catch { /* ignore */ }
+    setVisible(false);
+  };
+
+  const install = async () => {
+    const evt = (typeof window !== "undefined" ? window.__PWA_INSTALL_PROMPT__ : null) as InstallPromptEvent | null | undefined;
+    if (!evt) return;
+    try { await evt.prompt(); } catch { /* ignore */ }
+    try {
+      const choice = await evt.userChoice;
+      if (choice.outcome === "accepted") setVisible(false);
+    } catch { /* ignore */ }
+  };
+
+  return { visible, isIos, dismiss, install };
+}
+
+function InstallPrompt({ visible, isIos, dismiss, install }: { visible: boolean; isIos: boolean; dismiss: () => void; install: () => void }) {
+  if (!visible) return null;
+  if (isIos) {
+    return <div className="install-banner" role="status" aria-live="polite">
+      <span className="banner-icon"><Smartphone size={20} /></span>
+      <div className="banner-copy"><strong>加入主畫面，離線也能查看</strong><span>點擊下方 <Share size={12} style={{ display: "inline-block", verticalAlign: "-2px" }} /> 分享鍵 → 滑到「加入主畫面」</span></div>
+      <div className="banner-actions"><button className="dismiss" onClick={dismiss} aria-label="關閉"><X size={15} /></button></div>
+    </div>;
+  }
+  return <div className="install-banner" role="status" aria-live="polite">
+    <span className="banner-icon"><Download size={20} /></span>
+    <div className="banner-copy"><strong>安裝應用程式</strong><span>加到桌面，開啟更快也可離線檢視，完全不需另外下載。</span></div>
+    <div className="banner-actions"><button className="primary-button" style={{ padding: "10px 14px", fontSize: 13 }} onClick={install}><Download size={14} />安裝</button><button className="dismiss" onClick={dismiss} aria-label="稍後再說"><X size={15} /></button></div>
+  </div>;
+}
+
+function Shell({ children, share }: { children: ReactNode; share?: { onOpen: () => void } }) {
   const [location] = useLocation();
   const { user, isDemo, logout } = useAuth();
   const { usingDemo, settings } = useClassData();
@@ -67,7 +161,7 @@ function Shell({ children }: { children: ReactNode }) {
       <div className="header-actions"><button className="icon-button" aria-label="通知" onClick={() => toast("目前沒有新的通知")}><Bell size={19} /></button><button className="avatar" aria-label="使用者選單" onClick={() => setMenuOpen(!menuOpen)}>{displayName[0] || "劉"}</button></div>
       {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : "系統管理者"}</span><button onClick={() => void logout()}>登出系統</button></div>}
     </header>
-    <main className="main-content"><div className="page-heading"><div><p className="eyebrow">{yearLabel} · {className}</p><h2>{active}</h2></div></div>{children}</main>
+    <main className="main-content"><div className="page-heading"><div><p className="eyebrow">{yearLabel} · {className}</p><h2>{active}</h2></div>{share?.onOpen ? <button className="secondary-button tiny" onClick={share.onOpen} title="分享公開唯讀頁面" style={{ flex: "0 0 auto" }}><Share2 size={14} />分享</button> : null}</div>{children}</main>
     <nav className="bottom-nav" aria-label="主要導覽">{navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? "nav-item active" : "nav-item"}><Icon size={19} strokeWidth={location === href ? 2.5 : 2} /><span>{label}</span></Link>)}</nav>
     <footer className="footer"><span>{className} 班級自治會</span><span className="status-dot"><i /> {usingDemo ? "示範模式" : "已連線"}</span></footer>
   </div>;
@@ -91,20 +185,21 @@ function Overview() {
     return { ...item, paidCount, rate };
   }) : [];
   const anyProgress = progressPerPayment[0];
+
   return <>
-    <section className="welcome-card"><div><span className="soft-label"><Sparkles size={13} /> 本月摘要</span><h3>早安，{displayName}</h3><p>{loading ? "正在讀取班費資料…" : usingDemo ? "目前為示範模式，連線後即可同步資料。" : "班費帳務資料已同步完成。"}</p></div><div className="mini-orbit"><CircleDollarSign size={28} /></div></section>
+    <section className="welcome-card"><div><span className="soft-label"><Sparkles size={13} /> 本月摘要</span><h3>早安，{displayName}</h3><p>{loading ? "正在讀取班費資料…" : usingDemo ? "目前為示範模式，連線後即可同步資料。" : "班費帳務資料已同步完成。"}</p></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="mini-orbit"><CircleDollarSign size={28} /></div></div></section>
     <section className="metric-grid"><div className="metric-card accent"><span>目前結餘</span><strong>NT$ {(income - expense).toLocaleString()}</strong><small><ArrowUpRight size={14} />即時資料</small></div><div className="metric-card"><span>本月收入</span><strong>NT$ {income.toLocaleString()}</strong><small className="positive"><ArrowUpRight size={14} />{transactions.filter((item) => item.type === "in").length} 筆收入</small></div><div className="metric-card"><span>本月支出</span><strong>NT$ {expense.toLocaleString()}</strong><small className="negative"><ArrowDownLeft size={14} />{transactions.filter((item) => item.type === "out").length} 筆支出</small></div></section>
-    <div className="section-row"><h3>最近收支</h3><Link href="/transactions" className="text-link">查看全部 <ChevronRight size={15}/></Link></div>
-    <div className="transaction-list">{transactions.length ? transactions.slice(0, 3).map((item) => <TransactionRow key={item.id} item={item} />) : <div className="empty-state"><ReceiptText size={30}/><strong>尚無資料</strong><span>請至收支頁新增第一筆收支紀錄。</span></div>}</div>
-    <div className="section-row upcoming-heading"><h3>繳費進度</h3><Link href="/students" className="text-link">管理名單 <ChevronRight size={15}/></Link></div>
+    <div className="section-row"><h3>最近收支</h3><Link href="/transactions" className="text-link">查看全部 <ChevronRight size={15} /></Link></div>
+    <div className="transaction-list">{transactions.length ? transactions.slice(0, 3).map((item) => <TransactionRow key={item.id} item={item} />) : <div className="empty-state"><ReceiptText size={30} /><strong>尚無資料</strong><span>請至收支頁新增第一筆收支紀錄。</span></div>}</div>
+    <div className="section-row upcoming-heading"><h3>繳費進度</h3><Link href="/students" className="text-link">管理名單 <ChevronRight size={15} /></Link></div>
     {anyProgress ? progressPerPayment.map((p) => (
       <div className="progress-card" key={p.id}>
         <div className="progress-top"><div><strong>{p.title}</strong><span>{students.length ? `${students.length} 位學生 · 每位 NT$ ${p.amount.toLocaleString()}` : "尚無學生資料"}</span></div><b>{p.rate}%</b></div>
         <div className="progress-bar"><i style={{ width: `${p.rate}%` }} /></div>
-        <p><Check size={14}/> {p.paidCount} 位已完成繳費（NT$ {(p.paidCount * p.amount).toLocaleString()}），還有 {Math.max(students.length - p.paidCount, 0)} 位待處理</p>
+        <p><Check size={14} /> {p.paidCount} 位已完成繳費（NT$ {(p.paidCount * p.amount).toLocaleString()}），還有 {Math.max(students.length - p.paidCount, 0)} 位待處理</p>
       </div>
     )) : (
-      <div className="empty-state"><Users size={30}/><strong>尚無繳費項目</strong><span>請至「設定 → 繳費設定」新增第一筆繳費項目。</span></div>
+      <div className="empty-state"><Users size={30} /><strong>尚無繳費項目</strong><span>請至「設定 → 繳費設定」新增第一筆繳費項目。</span></div>
     )}
   </>;
 }
@@ -162,8 +257,39 @@ function TransactionsPage() {
   const [editTx, setEditTx] = useState<null | { tx: ClassTransaction; title: string; amount: string; kind: TransactionKind; images: string[] }>(null);
   const [editImageBusy, setEditImageBusy] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<null | { tx: ClassTransaction }>(null);
+  const [searchModal, setSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [liveQuery, setLiveQuery] = useState("");
   const titleListId = "tx-title-suggestions";
-  const items = filter === "all" ? transactions : transactions.filter((item) => item.type === filter);
+
+  const filteredItems = useMemo(() => {
+    const base = filter === "all" ? transactions : transactions.filter((item) => item.type === filter);
+    const q = liveQuery.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter((item) => {
+      const titleMatch = item.title.toLowerCase().includes(q);
+      const kindText = item.type === "in" ? "收入 in" : "支出 out";
+      const kindMatch = kindText.includes(q);
+      const amt = Math.abs(item.amount);
+      const amountMatch = String(amt).includes(q) || amt.toLocaleString().includes(q);
+      return titleMatch || kindMatch || amountMatch;
+    });
+  }, [transactions, filter, liveQuery]);
+
+  function openSearch() {
+    setSearchQuery(liveQuery);
+    setSearchModal(true);
+  }
+
+  function applySearch() {
+    setLiveQuery(searchQuery.trim());
+    setSearchModal(false);
+  }
+
+  function clearSearch() {
+    setSearchQuery("");
+    setLiveQuery("");
+  }
 
   function resetForm() {
     setTitle(""); setAmount(""); setKind("in"); setImages([]);
@@ -268,7 +394,7 @@ function TransactionsPage() {
     setter((current: string[]) => current.filter((_, i) => i !== index));
   }
 
-  return <><div className="page-toolbar"><div><p className="muted">{loading ? "讀取中…" : `共 ${transactions.length} 筆紀錄`}</p><h3>2026 年 10 月</h3></div><button className="primary-button" onClick={() => setShowForm(true)}><Plus size={17}/>新增</button></div><div className="filter-row"><button className={filter === "all" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("all")}>全部</button><button className={filter === "in" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("in")}>收入</button><button className={filter === "out" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("out")}>支出</button><button className="filter-chip icon-chip"><Filter size={15}/></button></div><div className="transaction-list full-list" onClick={closeMenu}>{items.length ? items.map((item) => <TransactionRow key={item.id} item={item} onOpenImages={(imgs, t) => imgs.length && setPreview({ title: t, images: imgs, index: 0 })} onMenu={(tx, anchor) => openMenu(tx, anchor)} />) : <div className="empty-state"><ReceiptText size={30}/><strong>目前尚無收支紀錄</strong><span>新增第一筆資料後會自動保存。</span></div>}</div>{menuState && <><div className="popover-backdrop" onClick={closeMenu} style={{position:"fixed",inset:0,zIndex:15}}/><div className="popover-menu" style={{position:"fixed",top:menuState.top,left:menuState.left,zIndex:16,minWidth:164,background:"#fff",border:"1px solid var(--line)",borderRadius:14,padding:6,boxShadow:"0 10px 26px rgba(20,60,40,.14)"}}><button className="popover-item" onClick={() => handleEditOpen(menuState.item)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--ink)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#f2f7f4")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Pencil size={15}/> 編輯</button><button className="popover-item danger" onClick={() => { setRemoveConfirm({ tx: menuState.item }); setMenuState(null); }} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--coral)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#fef1ed")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Trash2 size={15}/> 刪除</button></div></>}{showForm && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>新增收支</h3><button onClick={() => { resetForm(); setShowForm(false); }}><X size={18}/></button></div><label>類型<select value={kind} onChange={(event) => setKind(event.target.value as TransactionKind)}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={amount} onChange={(event) => setAmount(event.target.value)} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "add")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void saveTransaction()}>儲存</button></div></div>}{editTx && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>編輯收支</h3><button onClick={() => setEditTx(null)}><X size={18}/></button></div><label>類型<select value={editTx.kind} onChange={(event) => setEditTx({ ...editTx, kind: event.target.value as TransactionKind })}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={editTx.title} onChange={(event) => setEditTx({ ...editTx, title: event.target.value })} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={editTx.amount} onChange={(event) => setEditTx({ ...editTx, amount: event.target.value })} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{editTx.images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "edit")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{editTx.images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void handleEditSave()}>儲存變更</button></div></div>}{preview && <div className="modal-backdrop" onClick={() => setPreview(null)}><div className="modal tx-preview" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h3 style={{fontSize:16}}>{preview.title}</h3><button onClick={() => setPreview(null)}><X size={18}/></button></div><div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:200,margin:"6px 0 14px",background:"#f4f8f6",borderRadius:14,overflow:"hidden",padding:8}}><img src={preview.images[preview.index]} alt="" style={{width:"100%",maxHeight:"60vh",objectFit:"contain",display:"block"}} /></div><div style={{display:"flex",gap:8,overflowX:"auto",padding:"2px 0 4px"}}>{preview.images.map((src, i) => <button key={i} onClick={() => setPreview({ ...preview, index: i })} style={{flex:"0 0 auto",padding:2,borderRadius:12,border: i === preview.index ? "2px solid var(--teal)" : "2px solid transparent",background:"#fff"}}><img src={src} alt="" style={{width:56,height:56,objectFit:"cover",borderRadius:8,display:"block"}} /></button>)}</div><div style={{textAlign:"center",color:"#78908a",fontSize:12,fontWeight:800,marginTop:6}}>{preview.index + 1} / {preview.images.length}</div></div></div>}<ConfirmDialog open={Boolean(removeConfirm)} title="確認刪除這筆收支？" message={"「" + (removeConfirm?.tx.title ?? "") + "」一經刪除，包含附件圖片在內無法復原。"} onCancel={() => setRemoveConfirm(null)} onConfirm={() => void handleRemoveConfirm()} /></>;
+  return <><div className="page-toolbar"><div><p className="muted">{loading ? "讀取中…" : (liveQuery ? `找到 ${filteredItems.length} 筆 / 共 ${transactions.length} 筆` : `共 ${transactions.length} 筆紀錄`)}</p><h3>2026 年 10 月</h3></div><div style={{display:"flex",gap:10,alignItems:"center"}}>{liveQuery ? <button className="secondary-button tiny" style={{padding:"0 14px",fontWeight:800}} onClick={clearSearch} title="清除搜尋">「{liveQuery}」 ✕</button> : null}<button className="secondary-button" onClick={openSearch} title="搜尋收支"><Search size={17}/>搜尋</button><button className="primary-button" onClick={() => setShowForm(true)}><Plus size={17}/>新增</button></div></div><div className="filter-row"><button className={filter === "all" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("all")}>全部</button><button className={filter === "in" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("in")}>收入</button><button className={filter === "out" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("out")}>支出</button></div><div className="transaction-list full-list" onClick={closeMenu}>{filteredItems.length ? filteredItems.map((item) => <TransactionRow key={item.id} item={item} onOpenImages={(imgs, t) => imgs.length && setPreview({ title: t, images: imgs, index: 0 })} onMenu={(tx, anchor) => openMenu(tx, anchor)} />) : <div className="empty-state"><ReceiptText size={30}/><strong>{liveQuery ? "沒有符合的結果" : "目前尚無收支紀錄"}</strong><span>{liveQuery ? "請更換關鍵字或清除搜尋。" : "新增第一筆資料後會自動保存。"}</span></div>}</div>{searchModal && <div className="modal-backdrop" onClick={() => { setSearchQuery(liveQuery); setSearchModal(false); }}><div className="modal" style={{maxWidth:460}} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{display:"flex",gap:10,alignItems:"flex-start",flex:1}}><span style={{width:42,height:42,borderRadius:12,background:"#e2f0e9",color:"var(--teal)",display:"grid",placeItems:"center",flex:"0 0 auto"}}><Search size={19}/></span><div style={{flex:1}}><h3 style={{margin:"2px 0 4px",fontSize:19,letterSpacing:"-.02em"}}>搜尋收支</h3><p style={{margin:0,color:"var(--muted)",fontSize:13,lineHeight:1.5}}>輸入關鍵字查找項目名稱、類型（收入/支出）或金額，按下「套用」立即顯示結果。</p></div></div><button onClick={() => { setSearchQuery(liveQuery); setSearchModal(false); }} aria-label="關閉"><X size={18}/></button></div><label>關鍵字<input autoFocus placeholder="例如：班費、支出、500" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") applySearch(); if (event.key === "Escape") { setSearchQuery(liveQuery); setSearchModal(false); } }} /></label><div style={{display:"flex",gap:10,marginTop:6}}><button className="secondary-button wide" onClick={clearSearch}>清除</button><button className="primary-button wide" onClick={applySearch}>套用</button></div></div></div>}{menuState && <><div className="popover-backdrop" onClick={closeMenu} style={{position:"fixed",inset:0,zIndex:15}}/><div className="popover-menu" style={{position:"fixed",top:menuState.top,left:menuState.left,zIndex:16,minWidth:164,background:"#fff",border:"1px solid var(--line)",borderRadius:14,padding:6,boxShadow:"0 10px 26px rgba(20,60,40,.14)"}}><button className="popover-item" onClick={() => handleEditOpen(menuState.item)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--ink)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#f2f7f4")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Pencil size={15}/> 編輯</button><button className="popover-item danger" onClick={() => { setRemoveConfirm({ tx: menuState.item }); setMenuState(null); }} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--coral)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#fef1ed")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Trash2 size={15}/> 刪除</button></div></>}{showForm && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>新增收支</h3><button onClick={() => { resetForm(); setShowForm(false); }}><X size={18}/></button></div><label>類型<select value={kind} onChange={(event) => setKind(event.target.value as TransactionKind)}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={amount} onChange={(event) => setAmount(event.target.value)} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "add")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void saveTransaction()}>儲存</button></div></div>}{editTx && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>編輯收支</h3><button onClick={() => setEditTx(null)}><X size={18}/></button></div><label>類型<select value={editTx.kind} onChange={(event) => setEditTx({ ...editTx, kind: event.target.value as TransactionKind })}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={editTx.title} onChange={(event) => setEditTx({ ...editTx, title: event.target.value })} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={editTx.amount} onChange={(event) => setEditTx({ ...editTx, amount: event.target.value })} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{editTx.images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "edit")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{editTx.images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void handleEditSave()}>儲存變更</button></div></div>}{preview && <div className="modal-backdrop" onClick={() => setPreview(null)}><div className="modal tx-preview" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h3 style={{fontSize:16}}>{preview.title}</h3><button onClick={() => setPreview(null)}><X size={18}/></button></div><div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:200,margin:"6px 0 14px",background:"#f4f8f6",borderRadius:14,overflow:"hidden",padding:8}}><img src={preview.images[preview.index]} alt="" style={{width:"100%",maxHeight:"60vh",objectFit:"contain",display:"block"}} /></div><div style={{display:"flex",gap:8,overflowX:"auto",padding:"2px 0 4px"}}>{preview.images.map((src, i) => <button key={i} onClick={() => setPreview({ ...preview, index: i })} style={{flex:"0 0 auto",padding:2,borderRadius:12,border: i === preview.index ? "2px solid var(--teal)" : "2px solid transparent",background:"#fff"}}><img src={src} alt="" style={{width:56,height:56,objectFit:"cover",borderRadius:8,display:"block"}} /></button>)}</div><div style={{textAlign:"center",color:"#78908a",fontSize:12,fontWeight:800,marginTop:6}}>{preview.index + 1} / {preview.images.length}</div></div></div>}<ConfirmDialog open={Boolean(removeConfirm)} title="確認刪除這筆收支？" message={"「" + (removeConfirm?.tx.title ?? "") + "」一經刪除，包含附件圖片在內無法復原。"} onCancel={() => setRemoveConfirm(null)} onConfirm={() => void handleRemoveConfirm()} /></>;
 }
 
 function StudentsPage() {
@@ -577,12 +703,24 @@ function ReportsPage() {
   const income = incomeList.reduce((sum, item) => sum + Math.abs(item.amount), 0);
   const expense = expenseList.reduce((sum, item) => sum + Math.abs(item.amount), 0);
   const monthly = buildMonthlyTotals(transactions);
-  const max = Math.max(1, ...monthly.map((m) => m.total));
+  const rawMax = Math.max(1, ...monthly.map((m) => m.total));
   const expenseCats = buildExpenseCategories(expenseList);
   const anyExpense = expenseCats.some((c) => c.amount > 0);
   const net = income - expense;
-  return <><div className="report-card"><div className="report-head"><div><span>本學期現金流</span><strong>NT$ {net.toLocaleString()}</strong></div><span className={"trend-badge " + (net >= 0 ? "" : "")}>{net >= 0 ? <ArrowUpRight size={14}/> : <ArrowDownLeft size={14}/>} {net >= 0 ? "結餘" : "超支"}</span></div><div className="chart"><div className="chart-grid"><span>{`${Math.ceil(max / 1000) * 1000 >= 1000 ? (Math.ceil(max / 1000)).toLocaleString() + "k" : Math.ceil(max)}`}</span><span>{`${Math.ceil(max * 2 / 3 / 1000) * 1000 >= 1000 ? (Math.ceil(max * 2 / 3 / 1000)).toLocaleString() + "k" : Math.ceil(max * 2 / 3)}`}</span><span>{`${Math.ceil(max / 3 / 1000) * 1000 >= 1000 ? (Math.ceil(max / 3 / 1000)).toLocaleString() + "k" : Math.ceil(max / 3)}`}</span><span>0</span></div><div className="bars">{monthly.map((row, i) => {
-  const heightPct = row.total ? Math.max(6, Math.round((row.total / max) * 100)) : 0;
+
+  const Y_STEP = 1000;
+  const unitsNeeded = Math.max(4, Math.ceil(rawMax / Y_STEP) + 1);
+  const yMax = Y_STEP * unitsNeeded;
+  const yTicks: number[] = [];
+  for (let i = unitsNeeded; i >= 0; i -= 1) yTicks.push(Y_STEP * i);
+
+  function formatTick(v: number): string {
+    if (v <= 0) return "NT$ 0";
+    return `NT$ ${(v / 1000).toLocaleString()}k`;
+  }
+
+  return <><div className="report-card"><div className="report-head"><div><span>本學期現金流</span><strong>NT$ {net.toLocaleString()}</strong></div><span className={"trend-badge " + (net >= 0 ? "" : "")}>{net >= 0 ? <ArrowUpRight size={14}/> : <ArrowDownLeft size={14}/>} {net >= 0 ? "結餘" : "超支"}</span></div><div className="chart"><div className="chart-grid">{yTicks.map((t, i) => <span key={i}>{formatTick(t)}</span>)}</div><div className="bars">{monthly.map((row, i) => {
+  const heightPct = row.total ? Math.max(6, Math.round((row.total / Math.max(1, yMax)) * 100)) : 0;
   const isHot = i === monthly.length - 2;
   return <div className="bar-wrap" key={row.month}><i style={{height: `${heightPct}%`}} className={isHot ? "hot" : ""} title={`NT$ ${row.total.toLocaleString()}`}/><small>{MONTH_LABELS[row.month]}</small></div>;
 })}</div></div></div><div className="section-row"><h3>支出分類</h3></div><div className="category-list">{anyExpense ? expenseCats.map((c) => c.amount > 0 ? <div key={c.key}><span className={`category-dot ${c.dot}`}/><strong>{c.label}</strong><b>NT$ {c.amount.toLocaleString()}</b></div> : null) : <div><span className="category-dot coral"/><strong>尚無支出紀錄</strong><b>NT$ 0</b></div>}</div></>;
@@ -992,6 +1130,96 @@ function SettingsPage() {
 
 export default function Home() {
   const [location] = useLocation();
+  const { transactions, students, settings } = useClassData();
+  const paymentItems = Array.isArray(settings.payment) ? (settings.payment as PaymentItem[]) : [];
+  const income = transactions.filter((item) => item.type === "in").reduce((sum, item) => sum + Math.abs(item.amount), 0);
+  const expense = transactions.filter((item) => item.type === "out").reduce((sum, item) => sum + Math.abs(item.amount), 0);
+  const [shareModal, setShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  function buildPublicBundle(): string {
+    const safeTx = transactions.map((t) => ({
+      id: t.id,
+      title: t.title,
+      amount: t.amount,
+      type: t.type,
+      meta: t.meta,
+      createdAt: t.createdAt,
+    }));
+    const safePayments = paymentItems.map((p) => ({
+      id: p.id,
+      title: p.title,
+      amount: p.amount,
+      paidCount: students.filter((s) => getStudentPaymentPaid(s, p.id)).length,
+      studentCount: students.length,
+    }));
+    const bundle = {
+      v: 1,
+      className: settings.className ?? "701 班",
+      yearLabel: "2026 學年度",
+      generatedAt: new Date().toISOString(),
+      summary: {
+        balance: income - expense,
+        income,
+        expense,
+        incomeCount: transactions.filter((t) => t.type === "in").length,
+        expenseCount: transactions.filter((t) => t.type === "out").length,
+        txCount: transactions.length,
+        studentCount: students.length,
+      },
+      monthly: buildMonthlyTotals(transactions),
+      payments: safePayments,
+      transactions: safeTx,
+    };
+    try {
+      const json = JSON.stringify(bundle);
+      const bytes = new TextEncoder().encode(json);
+      let binary = "";
+      bytes.forEach((b) => { binary += String.fromCharCode(b); });
+      const b64 = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      return b64;
+    } catch (_err) {
+      return "";
+    }
+  }
+  function buildShareUrl(): string {
+    const b64 = buildPublicBundle();
+    const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
+    return `${base}open.html?d=${b64}`;
+  }
+  function openShare() {
+    setShareUrl(buildShareUrl());
+    setShareModal(true);
+  }
+  function copyShare() {
+    const link = shareUrl || buildShareUrl();
+    const fallback = () => {
+      const ta = document.createElement("textarea");
+      ta.value = link;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); toast.success("已複製連結"); }
+      catch { toast.error("複製失敗，請手動複製"); }
+      finally { document.body.removeChild(ta); }
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(link).then(() => toast.success("已複製連結"), fallback);
+    } else {
+      fallback();
+    }
+  }
+  function openShareTab() {
+    const link = shareUrl || buildShareUrl();
+    window.open(link, "_blank", "noopener");
+  }
+
   const page = useMemo(() => location === "/transactions" ? <TransactionsPage /> : location === "/students" ? <StudentsPage /> : location === "/reports" ? <ReportsPage /> : location === "/settings" ? <SettingsPage /> : <Overview />, [location]);
-  return <Shell>{page}</Shell>;
+  const install = usePwaInstallBanner();
+  return <>
+    <Shell share={location === "/" ? { onOpen: openShare } : undefined}>{page}</Shell>
+    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享公開頁面</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shareUrl} onClick={(e) => (e.target as HTMLInputElement).select()} /></label><div style={{ display: "flex", gap: 10, marginTop: 6 }}><button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽</button><button className="primary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button></div></div></div>}
+    <InstallPrompt visible={install.visible} isIos={install.isIos} dismiss={install.dismiss} install={install.install} />
+  </>;
 }

@@ -14,6 +14,8 @@
     <meta name="apple-mobile-web-app-title" content="701 班費" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./pwa-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./pwa-icon.svg" />
+    <link rel="mask-icon" href="./pwa-icon.svg" color="#247a72" />
     <script>
       (function () {
         try {
@@ -24,6 +26,19 @@
         } catch (e) {
           try { window.location.hash = "#/login"; } catch (_) {}
         }
+        window.__PWA_INSTALL_PROMPT__ = null;
+        window.addEventListener("beforeinstallprompt", function (event) {
+          event.preventDefault();
+          window.__PWA_INSTALL_PROMPT__ = event;
+          window.dispatchEvent(new Event("pwa-install-available"));
+        });
+        window.addEventListener("appinstalled", function () {
+          window.__PWA_INSTALL_PROMPT__ = null;
+          try {
+            window.localStorage.setItem("class701_pwa_installed", String(Date.now()));
+          } catch (_) {}
+          window.dispatchEvent(new Event("pwa-installed"));
+        });
       })();
     </script>
   </head>
