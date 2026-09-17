@@ -126,13 +126,13 @@ function InstallPrompt({ visible, isIos, dismiss, install }: { visible: boolean;
   if (!visible) return null;
   if (isIos) {
     return <div className="install-banner" role="status" aria-live="polite">
-      <span className="banner-icon"><BookText size={20} strokeWidth={2.2} /></span>
+      <span className="banner-icon"><img src="./pwa-icon.svg" alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", borderRadius: "inherit" }} /></span>
       <div className="banner-copy"><strong>加入主畫面，離線也能查看</strong><span>點擊下方 <Share size={12} style={{ display: "inline-block", verticalAlign: "-2px" }} /> 分享鍵 → 滑到「加入主畫面」</span></div>
       <div className="banner-actions"><button className="dismiss" onClick={dismiss} aria-label="關閉"><X size={15} /></button></div>
     </div>;
   }
   return <div className="install-banner" role="status" aria-live="polite">
-    <span className="banner-icon"><BookText size={20} strokeWidth={2.2} /></span>
+    <span className="banner-icon"><img src="./pwa-icon.svg" alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", borderRadius: "inherit" }} /></span>
     <div className="banner-copy"><strong>安裝應用程式</strong><span>加到桌面，開啟更快也可離線檢視，完全不需另外下載。</span></div>
     <div className="banner-actions"><button className="primary-button" style={{ padding: "10px 14px", fontSize: 13 }} onClick={install}><Download size={14} />安裝</button><button className="dismiss" onClick={dismiss} aria-label="稍後再說"><X size={15} /></button></div>
   </div>;
@@ -153,12 +153,12 @@ function Shell({ children, share }: { children: ReactNode; share?: { onOpen: () 
     (currentAdminDisplay as string | undefined) ??
     "劉老師";
   useEffect(() => {
-    if (typeof document !== "undefined") document.title = `${className}班費管理系統`;
+    if (typeof document !== "undefined") document.title = `班費管理`;
   }, [className]);
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand-lockup"><div className="brand-mark"><BookText size={19} strokeWidth={2.2} /></div><div><p className="eyebrow">MINGDE JUNIOR HIGH</p><h1>{className} 班費管理</h1></div></div>
+      <div className="brand-lockup"><div className="brand-mark"><img src="./pwa-icon.svg" alt="LOGO" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /></div><div><p className="eyebrow">CLASS FUND SYSTEM</p><h1>{className} 班費管理</h1></div></div>
       <div className="header-actions"><button className="icon-button" aria-label="通知" onClick={() => toast("目前沒有新的通知")}><Bell size={19} /></button><button className="avatar" aria-label="使用者選單" onClick={() => setMenuOpen(!menuOpen)}>{displayName[0] || "劉"}</button></div>
       {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : "系統管理者"}</span><button onClick={() => void logout()}>登出系統</button></div>}
     </header>
@@ -1198,6 +1198,11 @@ export default function Home() {
     setShareUrl(buildShareUrl());
     setShareModal(true);
   }
+  const shortShareUrl = useMemo(() => {
+    if (!shareUrl) return "";
+    if (shareUrl.length <= 60) return shareUrl;
+    return `${shareUrl.slice(0, 38)}…${shareUrl.slice(-14)}`;
+  }, [shareUrl]);
   function copyShare() {
     const link = shareUrl || buildShareUrl();
     const fallback = () => {
@@ -1250,7 +1255,7 @@ export default function Home() {
   const canNativeShare = useMemo(() => typeof navigator !== "undefined" && Boolean(navigator.share), []);
   return <>
     <Shell share={location === "/" ? { onOpen: openShare } : undefined}>{page}</Shell>
-    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享到 LINE / 社群</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shareUrl} onClick={(e) => (e.target as HTMLInputElement).select()} /></label><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}><button className="primary-button wide" style={{ background: "#06C755", boxShadow: "0 7px 14px rgba(6,199,85,.22)" }} onClick={shareToLine}><Share2 size={15} /> LINE 分享</button>{canNativeShare ? <button className="secondary-button wide" onClick={nativeShare}><Share2 size={15} /> 系統分享</button> : <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button>}<button className="secondary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button>{canNativeShare ? <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button> : null}</div></div></div>}
+    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享到 LINE / 社群</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shortShareUrl || "準備中…"} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", userSelect: "none", letterSpacing: "-.01em" }} onClick={copyShare} title="點擊即可複製完整連結" /></label><p style={{ margin: "4px 4px -6px", fontSize: 12, color: "var(--muted)" }}>顯示為縮寫版本；點擊輸入框或下方「複製連結」即可取得完整加密連結。</p><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}><button className="primary-button wide" style={{ background: "#06C755", boxShadow: "0 7px 14px rgba(6,199,85,.22)" }} onClick={shareToLine}><Share2 size={15} /> LINE 分享</button>{canNativeShare ? <button className="secondary-button wide" onClick={nativeShare}><Share2 size={15} /> 系統分享</button> : <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button>}<button className="secondary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button>{canNativeShare ? <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button> : null}</div></div></div>}
     <InstallPrompt visible={install.visible} isIos={install.isIos} dismiss={install.dismiss} install={install.install} />
   </>;
 }

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, BookText, Eye, EyeOff, LockKeyhole, Smartphone } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Smartphone } from "lucide-react";
 import { useAuth, demoCredentials, firebaseReady } from "@/contexts/AuthContext";
 import { useClassData } from "@/contexts/ClassDataContext";
 
@@ -14,7 +14,7 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (typeof document !== "undefined") document.title = `${className}班費管理系統`;
+    if (typeof document !== "undefined") document.title = `班費管理`;
   }, [className]);
 
   async function handleSubmit(event: FormEvent) {
@@ -22,7 +22,7 @@ export default function Login() {
     setBusy(true);
     try {
       await signIn(email, password);
-      toast.success(`登入成功，歡迎回到 ${className}班費管理系統`);
+      toast.success(`登入成功，歡迎回到班費管理`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "登入失敗，請檢查帳號密碼");
     } finally {
@@ -33,7 +33,7 @@ export default function Login() {
   return <div className="login-page">
     <div className="login-orb orb-one" /><div className="login-orb orb-two" />
     <main className="login-panel">
-      <div className="login-brand"><div className="brand-mark"><BookText size={22} strokeWidth={2.2} /></div><div><p className="eyebrow">MINGDE JUNIOR HIGH</p><h1>{className} 班費管理</h1></div></div>
+      <div className="login-brand"><div className="brand-mark"><img src="./pwa-icon.svg" alt="LOGO" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /></div><div><p className="eyebrow">CLASS FUND SYSTEM</p><h1>{className} 班費管理</h1></div></div>
       <div className="login-intro"><span className="login-kicker"><LockKeyhole size={13}/> 管理者登入</span><p>登入後即可管理班級收支、繳費名單與學期報表。</p></div>
       <form className="login-form" onSubmit={handleSubmit}>
         <label>電子信箱<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="teacher@mingde.edu.tw" autoComplete="email" required /></label>

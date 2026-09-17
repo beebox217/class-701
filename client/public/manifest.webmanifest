@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "明德國中 701 班費管理系統",
-  "short_name": "701 班費",
-  "description": "明德國中 701 班班費與繳費管理工具",
+  "name": "班費管理",
+  "short_name": "班費管理",
+  "description": "班費與繳費管理工具",
   "lang": "zh-Hant",
   "dir": "ltr",
   "start_url": "./#/login",
