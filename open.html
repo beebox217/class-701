@@ -52,57 +52,104 @@
         margin-top:8px;
       }
       .welcome-card {
-        position:relative; overflow:hidden; border-radius:26px; padding:22px 22px;
-        background: linear-gradient(160deg, #2b8b82 0%, #247a72 55%, #1f6d66 100%);
-        color:#f8fffc; box-shadow:0 18px 38px rgba(36,122,114,.28); margin: 8px 0 16px;
+        position:relative; overflow:hidden; border-radius:26px; padding:28px 28px;
+        background: linear-gradient(135deg, #216e69 0%, #2f8980 100%);
+        color:#f8fffc; box-shadow:0 15px 28px rgba(37,117,108,.18); margin: 8px 0 16px;
+        display:flex; justify-content:space-between; align-items:center; gap:14px;
       }
-      .welcome-card .soft-label { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.14); color:#e6fff8; font-size:12px; font-weight:700; backdrop-filter: blur(6px); }
-      .welcome-card h3 { margin:10px 0 0; font-size:26px; letter-spacing:-.04em; }
-      .metric-grid { display:grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; grid-auto-flow: column; gap:8px; margin-bottom:12px; }
-      .metric-card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px 10px 9px; box-shadow:0 6px 14px rgba(20,60,40,.05); overflow:hidden; min-width:0; }
-      .metric-card.accent { background: linear-gradient(180deg, #e9f5ef, #ffffff 70%); border-color:#dcece3; }
-      .metric-card span { color:var(--muted); font-size:10.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
-      .metric-card strong { display:block; font-size:17px; letter-spacing:-.03em; margin:3px 0 4px; overflow:hidden; text-overflow:ellipsis; }
-      .metric-card small { display:inline-flex; align-items:center; gap:4px; color:var(--muted); font-weight:700; font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-      .metric-card small.positive { color:#247a72; } .metric-card small.negative { color:var(--coral); }
-      .section-row { display:flex; align-items:center; justify-content:space-between; margin:14px 2px 10px; }
-      .section-row h3 { margin:0; font-size:19px; letter-spacing:-.02em; }
-      .text-link { color:var(--teal); font-weight:800; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; gap:2px; }
-      .transaction-list { display:flex; flex-direction:column; gap:10px; }
-      .transaction-row {
-        display:grid; grid-template-columns: 52px 1fr auto; align-items:center; gap:12px;
-        background:var(--card); border:1px solid var(--line); border-radius:20px; padding:14px;
+      .welcome-card:after { content:""; position:absolute; width:200px;height:200px;border:1px solid rgba(255,255,255,.12);border-radius:50%;right:-60px;bottom:-110px; }
+      .welcome-card .soft-label { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.13); color:#e6fff8; font-size:13px; font-weight:800; backdrop-filter:blur(10px); }
+      .welcome-card h3 { margin:15px 0 6px; font-size:27px; letter-spacing:-.05em; }
+      .welcome-card p { margin:0;color:#d2ece3;font-size:15px; line-height:1.55; }
+      .welcome-card .mini-orbit { width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.15);position:relative;z-index:1; flex:0 0 auto; }
+      .metric-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:16px 0 30px; }
+      .metric-card { padding:18px 15px; background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 5px 14px rgba(34,77,67,.04); }
+      .metric-card.accent { background:#e1f1e9; border-color:transparent; }
+      .metric-card span { color:var(--muted); font-size:13px; display:block; }
+      .metric-card strong { display:block; font-size:22px; margin:10px 0 8px; letter-spacing:-.04em; }
+      .metric-card small { display:flex; align-items:center; gap:4px; color:var(--teal); font-size:12px; }
+      .metric-card small.negative { color:var(--coral); }
+      .section-row { display:flex; justify-content:space-between; align-items:center; margin:0 0 14px; }
+      .section-row h3 { margin:0;font-size:19px;letter-spacing:-.03em; }
+      .text-link { color:var(--teal);background:transparent;font-size:14px;display:inline-flex;align-items:center;gap:3px;font-weight:700; text-decoration:none; }
+      .transaction-list { background:#fff; border:1px solid var(--line); border-radius:18px; overflow:hidden; }
+      .transaction-row { padding:18px 15px; gap:12px; border-bottom:1px solid var(--line); display:flex; align-items:center; }
+      .transaction-row:last-child { border-bottom:0; }
+      .tx-icon { width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto; }
+      .tx-icon.in { background:#e1f1e9;color:var(--teal); }
+      .tx-icon.out { background:#fff0ed;color:var(--coral); }
+      .tx-copy { flex:1; min-width:0; display:flex; flex-direction:column; gap:0; }
+      .tx-copy .tx-title-row { display:flex; align-items:center; gap:10px; justify-content:space-between; width:100%; }
+      .tx-copy .tx-title-row strong { display:block;font-size:15px; min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .tx-title-image { flex:0 0 auto; border:0; background:transparent; padding:0; cursor:zoom-in; border-radius:11px; }
+      .tx-title-image img { width:40px; height:40px; object-fit:cover; border-radius:11px; display:block; border:1.5px solid #dbe7e1; box-shadow:0 3px 8px rgba(12,50,40,.12); }
+      .tx-thumb-row { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+      .tx-thumb-row .tx-thumb { border:0; background:transparent; padding:0; cursor:zoom-in; border-radius:9px; }
+      .tx-thumb-row .tx-thumb img { width:44px; height:44px; object-fit:cover; border-radius:9px; display:block; border:1px solid #e5ece8; }
+      .tx-thumb-row .tx-thumb-more { width:44px; height:44px; border-radius:9px; display:grid; place-items:center; background:#eef5f1; color:#56736d; font-size:12px; font-weight:800; border:1px dashed #cfdfd7; }
+      .tx-row-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; position:relative; }
+      .public-shell .amount { font-size:22px; font-weight:900; letter-spacing:-.05em; }
+      .public-shell .amount.in { color:var(--teal); text-shadow:0 1px 0 rgba(36,122,114,.06); }
+      .public-shell .amount.out { color:#5f6f6d; text-shadow:0 1px 0 rgba(0,0,0,.04); }
+      .upcoming-heading { margin-top:28px; }
+      .progress-card { background:#fff;border:1px solid var(--line);border-radius:18px; padding:19px; margin-bottom:14px; }
+      .progress-top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+      .progress-top strong,.progress-top span { display:block; }
+      .progress-top strong { font-size:17px; }
+      .progress-top span { color:var(--muted);font-size:13px;margin-top:5px; }
+      .progress-top b { color:var(--teal);font-size:27px; }
+      .progress-bar { height:10px;background:#edf2ee;border-radius:999px;margin:18px 0 12px;overflow:hidden; }
+      .progress-bar i { display:block;height:100%;background:var(--teal);border-radius:99px; }
+      .progress-card p { color:var(--muted);font-size:13px;margin:0;display:flex;align-items:center;gap:6px; line-height:1.65; }
+      .unpaid-seats { display:block; margin-top:10px; padding:10px 12px; border-radius:12px; background:#fff0ed; color:#c94d36; font-weight:700; line-height:1.6; word-break:break-word; overflow-wrap:anywhere; }
+      .empty-state { padding:17px;color:var(--muted);text-align:center;font-size:13px;background:#f6faf7;border-radius:14px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+      .empty-state strong { color:var(--ink); font-size:15px; }
+      .footer-note { margin-top:28px; display:flex; justify-content:space-between; align-items:center; color:#91afaa; font-size:12px; }
+      .status-dot { display:flex;align-items:center;gap:5px; }
+      .status-dot i { width:6px;height:6px;background:#65b28a;border-radius:50%;display:block; }
+      .tx-preview-modal {
+        position:fixed; inset:0; background:rgba(12,39,38,.62); z-index:60; display:grid; place-items:center; padding:16px;
       }
-      .tx-icon {
-        width:48px; height:48px; border-radius:16px; display:grid; place-items:center;
+      .tx-preview {
+        width:min(720px, calc(100vw - 24px)); background:#fff; border-radius:22px; padding:20px; box-shadow:0 24px 64px rgba(10,35,32,.3); position:relative;
       }
-      .tx-icon.in { background:#e2f0e9; color:var(--teal); }
-      .tx-icon.out { background:#fdece7; color:var(--coral); }
-      .tx-copy strong { display:block; font-size:16px; letter-spacing:-.01em; }
-      .tx-copy span { color:var(--muted); font-size:13px; line-height:1.45; font-weight:700; }
-      .amount { font-weight:900; font-size:17px; letter-spacing:-.01em; }
-      .amount.in { color:var(--teal); } .amount.out { color:var(--coral); }
-      .empty-state { background:var(--card); border:1px dashed #cfe0d7; color:var(--muted); padding:26px 20px; border-radius:20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px; }
-      .empty-state strong { color:var(--ink); font-size:16px; }
-      .progress-card { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:18px 18px 16px; margin-top:10px; box-shadow:0 8px 18px rgba(20,60,40,.05); }
-      .progress-top { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:12px; }
-      .progress-top strong { display:block; font-size:17px; letter-spacing:-.02em; }
-      .progress-top span { color:var(--muted); font-size:13px; line-height:1.55; font-weight:700; }
-      .progress-top b { font-size:22px; letter-spacing:-.02em; color:var(--teal); }
-      .progress-bar { height:10px; border-radius:999px; background:#eaf3ef; overflow:hidden; }
-      .progress-bar i { display:block; height:100%; background: linear-gradient(90deg, #3a9b8f, #247a72); border-radius:999px; transition: width .4s ease; }
-      .progress-card p { margin:12px 0 0; color:var(--muted); font-size:13px; line-height:1.55; font-weight:700; display:flex; align-items:center; gap:6px; }
-      .footer-note { margin-top:28px; display:flex; justify-content:space-between; color:#708681; font-weight:700; font-size:12.5px; }
-      .footer-note .status-dot { display:inline-flex; align-items:center; gap:8px; }
-      .footer-note .status-dot i { width:8px; height:8px; border-radius:50%; background:#247a72; box-shadow:0 0 0 4px rgba(36,122,114,.18); }
-      @media (max-width: 520px) {
-        .welcome-card { padding: 18px 18px; }
-        .welcome-card h3 { font-size: 22px; }
-        .metric-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; gap: 6px; }
-        .metric-card { padding: 8px 8px 7px; }
-        .metric-card span { font-size: 9.5px; }
-        .metric-card strong { font-size: 14.5px; margin: 2px 0 3px; }
-        .metric-card small { font-size: 9.5px; }
+      .tx-preview-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; }
+      .tx-preview-head h3 { margin:0; font-size:17px; letter-spacing:-.03em; }
+      .tx-preview-counter { display:inline-flex; align-items:center; gap:8px; }
+      .tx-preview-counter button { width:30px; height:30px; border-radius:50%; background:#eaf3ef; border:0; display:grid; place-items:center; color:#315953; cursor:pointer; }
+      .tx-preview-counter button:disabled { opacity:.4; cursor:not-allowed; filter:grayscale(.2); }
+      .tx-preview-counter span { color:#4b635e; font-size:13px; font-weight:800; min-width:50px; text-align:center; }
+      .tx-preview-close { width:34px; height:34px; border-radius:50%; background:#f0f4f1; border:0; display:grid; place-items:center; cursor:pointer; color:#315953; }
+      .tx-preview-stage { position:relative; background:#f4f8f5; border-radius:18px; min-height:320px; display:grid; place-items:center; overflow:hidden; }
+      .tx-preview-stage img { max-width:100%; max-height:62vh; display:block; border-radius:14px; box-shadow:0 10px 24px rgba(14,50,44,.18); }
+      .gallery-arrow {
+        position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%;
+        background:rgba(255,255,255,.92); box-shadow:0 6px 16px rgba(20,50,40,.16);
+        color:#315953; z-index:2; border:0; display:grid; place-items:center; cursor:pointer;
+      }
+      .gallery-arrow:disabled { opacity:.35; cursor:not-allowed; filter:grayscale(.2); }
+      .gallery-prev { left:10px; }
+      .gallery-next { right:10px; }
+      .tx-preview-thumbs { display:flex; gap:8px; margin-top:14px; overflow:auto; padding:2px 2px 6px; }
+      .tx-preview-thumbs button {
+        width:58px; height:58px; border-radius:10px; padding:0; border:2px solid transparent; background:#fff; cursor:pointer; flex:0 0 auto; overflow:hidden;
+      }
+      .tx-preview-thumbs button.active { border-color:var(--teal); box-shadow:0 0 0 3px rgba(36,122,114,.14); }
+      .tx-preview-thumbs button img { width:100%; height:100%; object-fit:cover; display:block; }
+      .eyebrow-text { margin:4px 4px 0; color:#708681; font-weight:800; font-size:12.5px; letter-spacing:.14em; }
+      .eyebrow-text .tag { color:var(--teal); }
+      @media (max-width: 480px) {
+        .public-shell { padding: 20px 16px 72px; }
+        .welcome-card { padding: 22px 22px; min-height:auto; }
+        .welcome-card h3 { font-size: 23px; }
+        .welcome-card p { font-size:14px; }
+        .metric-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 24px; }
+        .metric-card { padding: 14px 12px; border-radius:16px; }
+        .metric-card span { font-size: 12px; }
+        .metric-card strong { font-size:18px; margin: 6px 0 6px; }
+        .metric-card small { font-size:11px; }
+        .public-shell .amount { font-size:20px; }
+        .welcome-card .mini-orbit { width:60px; height:60px; }
       }
     </style>
   </head>
@@ -130,9 +177,39 @@
         function fmt(v) { return Number(v || 0).toLocaleString(); }
         function arrowUp() { return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>'; }
         function arrowDown() { return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>'; }
+        function chevronRight() { return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'; }
         function sparkles() { return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="m5.6 5.6 2.8 2.8"/><path d="m15.6 15.6 2.8 2.8"/><path d="m5.6 18.4 2.8-2.8"/><path d="m15.6 8.4 2.8-2.8"/></svg>'; }
-        function renderEmpty(title, desc) {
-          return `<div class="empty-state"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M10 16H8"/></svg><strong>${title}</strong><span>${desc}</span></div>`;
+        function checkIcon() { return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'; }
+        function circleDollarIcon() { return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>'; }
+        function closeIcon() { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'; }
+        function chevronLeftIcon() { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>'; }
+        function chevronRightIcon() { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'; }
+        function xIconSm() { return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'; }
+        function arrowDownLeft() { return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>'; }
+        function arrowUpRight() { return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>'; }
+        function receiptIcon() { return '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M10 16H8"/></svg>'; }
+        function usersIcon() { return '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'; }
+        function renderEmpty(title, desc, icon) {
+          return `<div class="empty-state">${icon || ""}<strong>${title}</strong><span>${desc}</span></div>`;
+        }
+        function greetingOf(h) {
+          if (h >= 3 && h < 11) return "早安";
+          if (h >= 11 && h < 19) return "午安";
+          return "晚安";
+        }
+        function txImagesHTML(t, previewIndex) {
+          if (!t || !Array.isArray(t.images) || !t.images.length) return { titleExtra: "", thumbRow: "" };
+          const first = t.images[0];
+          const rest = t.images.slice(1, 4);
+          const moreN = Math.max(0, t.images.length - 4);
+          const titleExtra = `<button class="tx-title-image" data-action="open-preview" data-idx="${previewIndex}" aria-label="檢視圖片" title="${t.images.length} 張附件"><img src="${first}" alt="" /></button>`;
+          let thumbRow = "";
+          if (t.images.length > 1) {
+            const thumbs = rest.map((src, i) => `<button class="tx-thumb" data-action="open-preview" data-idx="${previewIndex}" aria-label="查看圖片"><img src="${src}" alt="" /></button>`).join("");
+            const more = moreN > 0 ? `<span class="tx-thumb-more">+${moreN}</span>` : "";
+            thumbRow = `<div class="tx-thumb-row">${thumbs}${more}</div>`;
+          }
+          return { titleExtra, thumbRow };
         }
         function render(data) {
           const root = document.getElementById("root");
@@ -143,22 +220,35 @@
                 <div class="brand-mark">${classLogo(26,26)}</div>
                 <div class="brand-copy"><p class="eyebrow">CLASS FUND SYSTEM</p><h1>班費公開頁</h1></div>
               </div>
-              <section class="welcome-card"><div><span class="soft-label">${sparkles()} 無法讀取分享資料</span><h3>連結已失效或格式錯誤</h3></div></section>
+              <section class="welcome-card"><div><span class="soft-label">${sparkles()} 無法讀取分享資料</span><h3>連結已失效或格式錯誤</h3><p>請由系統內重新建立分享連結後再開啟。</p></div><div class="mini-orbit">${circleDollarIcon()}</div></section>
               ${renderEmpty("目前沒有可顯示的資料", "請由系統內重新建立分享連結後再開啟。")}`;
+            bindPreview([]);
             return;
           }
           const s = data.summary || {};
           const txs = Array.isArray(data.transactions) ? data.transactions : [];
-          const recent = txs.slice(0, 10);
-          const txRows = recent.length ? recent.map((t) => {
+          const recent = txs.slice(0, 3);
+          const txRows = recent.length ? recent.map((t, idx) => {
             const cls = String(t.type) === "in" ? "in" : "out";
             const sign = String(t.type) === "in" ? "+" : "−";
             const amt = Math.abs(Number(t.amount) || 0);
-            const icon = cls === "in"
-              ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>'
-              : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>';
-            return `<div class="transaction-row"><div class="tx-icon ${cls}">${icon}</div><div class="tx-copy"><strong>${String(t.title || "").replace(/</g, "&lt;")}</strong><span>${String(t.meta || "").replace(/</g, "&lt;") || (new Date(t.createdAt || Date.now()).toLocaleDateString("zh-Hant"))}</span></div><strong class="amount ${cls}">${sign}${fmt(amt)}</strong></div>`;
-          }).join("") : renderEmpty("尚無收支紀錄", "這個班級目前還沒有任何收支明細。");
+            const icon = cls === "in" ? arrowDownLeft() : arrowUpRight();
+            const { titleExtra, thumbRow } = txImagesHTML(t, idx);
+            const titleSafe = String(t.title || "").replace(/</g, "&lt;");
+            return `<div class="transaction-row" data-tx-idx="${idx}">
+              <div class="tx-icon ${cls}">${icon}</div>
+              <div class="tx-copy">
+                <div class="tx-title-row">
+                  <strong>${titleSafe}</strong>
+                  ${titleExtra}
+                </div>
+                ${thumbRow}
+              </div>
+              <div class="tx-row-actions">
+                <strong class="amount ${cls}">${sign}${fmt(amt)}</strong>
+              </div>
+            </div>`;
+          }).join("") : renderEmpty("尚無資料", "請至收支頁新增第一筆收支紀錄。", receiptIcon());
           const payments = Array.isArray(data.payments) ? data.payments : [];
           let progressHTML = "";
           if (payments.length) {
@@ -168,34 +258,138 @@
                 const pc = Number(p.paidCount) || 0;
                 const rate = sc ? Math.min(100, Math.round((pc / sc) * 100)) : 0;
                 const paid = pc * (Number(p.amount) || 0);
+                const unpaid = Math.max(sc - pc, 0);
+                const unpaidSeats = typeof p.unpaidSeats === "string" ? p.unpaidSeats : "";
+                const unpaidChip = unpaidSeats
+                  ? `<p class="unpaid-seats">待繳學生座號：${unpaidSeats.replace(/</g, "&lt;")}</p>`
+                  : `<p class="unpaid-seats" style="background:#eaf6ee;color:#2d7a6a">✓ 全數繳清，感謝家長配合 🎉</p>`;
                 const text = sc
                   ? `${sc} 位學生 · 每位 NT$ ${fmt(p.amount)}`
                   : "尚無學生資料";
                 const desc = sc
-                  ? `${pc} 位已完成繳費（NT$ ${fmt(paid)}），還有 ${Math.max(sc - pc, 0)} 位待處理`
+                  ? `${checkIcon()} ${pc} 位已完成繳費（NT$ ${fmt(paid)}），還有 ${unpaid} 位待處理`
                   : "尚無學生資料";
-                return `<div class="progress-card"><div class="progress-top"><div><strong>${String(p.title).replace(/</g, "&lt;")}</strong><span>${text}</span></div><b>${rate}%</b></div><div class="progress-bar"><i style="width:${rate}%"></i></div><p><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${desc}</p></div>`;
+                return `<div class="progress-card"><div class="progress-top"><div><strong>${String(p.title).replace(/</g, "&lt;")}</strong><span>${text}</span></div><b>${rate}%</b></div><div class="progress-bar"><i style="width:${rate}%"></i></div><p>${desc}</p>${unpaidChip}</div>`;
               }).join("");
+          } else {
+            progressHTML = renderEmpty("尚無繳費項目", "請至「設定 → 繳費設定」新增第一筆繳費項目。", usersIcon());
           }
           const generatedAt = data.generatedAt ? new Date(data.generatedAt).toLocaleString("zh-Hant") : "";
-          document.title = `${data.className || "701 班"} 班費公開頁`;
+          const hr = new Date().getHours();
+          const greeting = greetingOf(hr);
+          const className = (data.className || "701 班").replace(/</g, "&lt;");
+          document.title = `${className} 班費公開頁`;
           root.innerHTML = `
             <div class="public-top">
               <div class="brand-mark">${classLogo(26,26)}</div>
-              <div class="brand-copy"><p class="eyebrow">CLASS FUND SYSTEM</p><h1>${data.className || "701 班"} 班費管理</h1></div>
+              <div class="brand-copy"><p class="eyebrow">CLASS FUND SYSTEM</p><h1>${className} 班費管理</h1></div>
             </div>
-            <p class="eyebrow" style="margin:4px 4px 0;color:#708681;font-weight:800;font-size:12.5px;letter-spacing:.14em">${data.yearLabel || "2026 學年度"} · ${data.className || "701 班"} · <span style="color:var(--teal)">公開唯讀</span></p>
-            <section class="welcome-card"><div><span class="soft-label">${sparkles()} 班費摘要</span><h3>班費公開頁面</h3></div></section>
-            <section class="metric-grid">
-              <div class="metric-card accent"><span>目前結餘</span><strong>NT$ ${fmt(s.balance)}</strong><small>${arrowUp()} 公開資料</small></div>
-              <div class="metric-card"><span>累計收入</span><strong>NT$ ${fmt(s.income)}</strong><small class="positive">${arrowUp()} ${Number(s.incomeCount || 0)} 筆收入</small></div>
-              <div class="metric-card"><span>累計支出</span><strong>NT$ ${fmt(s.expense)}</strong><small class="negative">${arrowDown()} ${Number(s.expenseCount || 0)} 筆支出</small></div>
+            <p class="eyebrow-text">${data.yearLabel || "2026 學年度"} · ${className} · <span class="tag">公開唯讀</span></p>
+            <section class="welcome-card">
+              <div>
+                <span class="soft-label">${sparkles()} 本月摘要</span>
+                <h3>${greeting}，${className}</h3>
+                <p>本班班費帳務資料已同步完成。</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div class="mini-orbit">${circleDollarIcon()}</div>
+              </div>
             </section>
-            <div class="section-row"><h3>收支明細（最近 ${recent.length} 筆）</h3><span class="text-link">共 ${txs.length} 筆</span></div>
+            <section class="metric-grid">
+              <div class="metric-card accent"><span>目前結餘</span><strong>NT$ ${fmt(s.balance)}</strong><small>${arrowUp()} 即時資料</small></div>
+              <div class="metric-card"><span>本月收入</span><strong>NT$ ${fmt(s.income)}</strong><small class="positive">${arrowUp()} ${Number(s.incomeCount || 0)} 筆收入</small></div>
+              <div class="metric-card"><span>本月支出</span><strong>NT$ ${fmt(s.expense)}</strong><small class="negative">${arrowDown()} ${Number(s.expenseCount || 0)} 筆支出</small></div>
+            </section>
+            <div class="section-row"><h3>最近收支</h3><span class="text-link">共 ${txs.length} 筆 ${chevronRight()}</span></div>
             <div class="transaction-list">${txRows}</div>
+            <div class="section-row upcoming-heading"><h3>繳費進度</h3></div>
             ${progressHTML}
-            <div class="footer-note"><span>${data.className || "701 班"} 班級自治會</span><span class="status-dot"><i></i>唯讀模式${generatedAt ? " · " + generatedAt : ""}</span></div>
+            <div class="footer-note"><span>${className} 班級自治會</span><span class="status-dot"><i></i>唯讀模式${generatedAt ? " · " + generatedAt : ""}</span></div>
           `;
+          bindPreview(recent);
+        }
+        function bindPreview(recentTxs) {
+          const allButtons = document.querySelectorAll("[data-action=open-preview]");
+          const body = document.body;
+          const openModal = (txList, startIdx) => {
+            const imgs = Array.isArray(txList.images) ? txList.images.slice() : [];
+            if (!imgs.length) return;
+            const title = String(txList.title || "").replace(/</g, "&lt;");
+            let idx = Number(startIdx) || 0;
+            idx = Math.max(0, Math.min(imgs.length - 1, idx));
+            const wrap = document.createElement("div");
+            wrap.className = "tx-preview-modal";
+            wrap.setAttribute("role", "dialog");
+            wrap.setAttribute("aria-modal", "true");
+            const render = () => {
+              const img = imgs[idx];
+              const thumbs = imgs.map((src, i) => `<button class="${i === idx ? "active" : ""}" data-goto="${i}" aria-label="切換到第 ${i+1} 張"><img src="${src}" alt="" /></button>`).join("");
+              wrap.innerHTML = `
+                <div class="tx-preview" onclick="event.stopPropagation()">
+                  <div class="tx-preview-head">
+                    <h3>${title} · 圖片預覽</h3>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div class="tx-preview-counter">
+                        <button data-act="prev" aria-label="上一張" ${idx === 0 ? "disabled" : ""}>${chevronLeftIcon()}</button>
+                        <span>${idx + 1} / ${imgs.length}</span>
+                        <button data-act="next" aria-label="下一張" ${idx === imgs.length - 1 ? "disabled" : ""}>${chevronRightIcon()}</button>
+                      </div>
+                      <button class="tx-preview-close" data-act="close" aria-label="關閉預覽">${xIconSm()}</button>
+                    </div>
+                  </div>
+                  <div class="tx-preview-stage">
+                    <button class="gallery-arrow gallery-prev" data-act="prev" aria-label="上一張" ${idx === 0 ? "disabled" : ""}>${chevronLeftIcon()}</button>
+                    <img src="${img}" alt="${title} 第 ${idx+1} 張" />
+                    <button class="gallery-arrow gallery-next" data-act="next" aria-label="下一張" ${idx === imgs.length - 1 ? "disabled" : ""}>${chevronRightIcon()}</button>
+                  </div>
+                  <div class="tx-preview-thumbs">${thumbs}</div>
+                </div>
+              `;
+              wrap.querySelectorAll("[data-act]").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  const act = btn.getAttribute("data-act");
+                  if (act === "close") close();
+                  if (act === "prev" && idx > 0) { idx -= 1; render(); }
+                  if (act === "next" && idx < imgs.length - 1) { idx += 1; render(); }
+                });
+              });
+              wrap.querySelectorAll("[data-goto]").forEach((b) => {
+                b.addEventListener("click", (e) => {
+                  e.stopPropagation();
+                  const goto = Number(b.getAttribute("data-goto"));
+                  if (!isNaN(goto) && goto >= 0 && goto < imgs.length) { idx = goto; render(); }
+                });
+              });
+            };
+            const close = () => {
+              if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+              body.style.overflow = "";
+              document.removeEventListener("keydown", onKey);
+            };
+            const onKey = (e) => {
+              if (e.key === "Escape") close();
+              if (e.key === "ArrowLeft" && idx > 0) { idx -= 1; render(); }
+              if (e.key === "ArrowRight" && idx < imgs.length - 1) { idx += 1; render(); }
+            };
+            wrap.addEventListener("click", (e) => {
+              if (e.target === wrap) close();
+            });
+            body.appendChild(wrap);
+            body.style.overflow = "hidden";
+            document.addEventListener("keydown", onKey);
+            render();
+          };
+          allButtons.forEach((b) => {
+            b.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const txIdxRaw = b.closest("[data-tx-idx]")?.getAttribute("data-tx-idx");
+              const txIdx = Number(txIdxRaw);
+              const tx = !isNaN(txIdx) ? recentTxs[txIdx] : null;
+              if (tx) openModal(tx, 0);
+            });
+          });
         }
         try {
           const data = decodeBundle(location.search);

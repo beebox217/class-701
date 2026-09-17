@@ -21,14 +21,12 @@ export default defineConfig({
     host: true,
     port: 3000,
     strictPort: false,
-    allowedHosts: [
-      ".manus.computer",
-      ".manuspre.computer",
-      ".manus-asia.computer",
-      ".manuscomputer.ai",
-      ".manusvm.computer",
-      "localhost",
-      "127.0.0.1",
-    ],
+    allowedHosts: true,
+    hmr: {
+      host: "",
+      clientPort: 443,
+      protocol: "wss",
+      overlay: true,
+    },
   },
 });
