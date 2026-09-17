@@ -36,6 +36,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  if (
+    url.pathname.startsWith("/src/") ||
+    url.pathname.startsWith("/@") ||
+    url.pathname.startsWith("/node_modules/") ||
+    url.pathname === "/__open-in-editor" ||
+    url.pathname.endsWith(".map") ||
+    url.searchParams.has("t") ||
+    url.searchParams.has("v")
+  ) {
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)

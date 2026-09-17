@@ -31,7 +31,7 @@ function ProtectedApp() {
 }
 
 function App() {
-  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster /><Router hook={useHashLocation}><AuthProvider><ClassDataProvider><ProtectedApp /></ClassDataProvider></AuthProvider></Router></TooltipProvider></ThemeProvider></ErrorBoundary>;
+  return <ErrorBoundary><ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light"><TooltipProvider><Toaster /><Router hook={useHashLocation}><AuthProvider><ClassDataProvider><ProtectedApp /></ClassDataProvider></AuthProvider></Router></TooltipProvider></ThemeProvider></ErrorBoundary>;
 }
 
 export default App;

@@ -8,6 +8,7 @@ import {
   listSettings as listFirestoreSettings,
   listStudents as listFirestoreStudents,
   listTransactions as listFirestoreTransactions,
+  registerTransactionImagesFromFirestore,
   removeStudent as removeFirestoreStudent,
   removeTransaction as removeFirestoreTransaction,
   updateStudent as updateFirestoreStudent,
@@ -29,8 +30,8 @@ type ClassDataContextValue = {
   loading: boolean;
   usingDemo: boolean;
   refresh: () => Promise<void>;
-  addTransaction: (input: { title: string; amount: number; type: TransactionKind }) => Promise<string>;
-  updateTransaction: (id: string, patch: { title?: string; amount?: number; type?: TransactionKind }) => Promise<void>;
+  addTransaction: (input: { title: string; amount: number; type: TransactionKind; images?: string[] }) => Promise<string>;
+  updateTransaction: (id: string, patch: { title?: string; amount?: number; type?: TransactionKind; images?: string[] }) => Promise<void>;
   removeTransaction: (id: string) => Promise<void>;
   toggleStudent: (input: { studentId: string; paymentId?: string }) => Promise<void>;
   addStudent: (input: { no: string; name: string; paid?: boolean; note?: string; payments?: Record<string, boolean> }) => Promise<void>;
@@ -102,6 +103,7 @@ export function ClassDataProvider({ children }: { children: ReactNode }) {
       const nextSettings = normalizeSettings(nextSettingsRaw);
       const nextStudents = await listFirestoreStudents({ settingsPayment: nextSettings.payment });
       setTransactions(nextTransactions);
+      registerTransactionImagesFromFirestore(nextTransactions);
       setStudents(nextStudents);
       setSettings(nextSettings);
     } catch (error) {
@@ -123,7 +125,17 @@ export function ClassDataProvider({ children }: { children: ReactNode }) {
     addTransaction: async (input) => {
       if (!firebaseReady || isDemo) {
         const id = `demo-${Date.now()}`;
-        setTransactions((current) => [{ id, title: input.title, meta: "剛剛 · 示範模式", amount: input.type === "out" ? -Math.abs(input.amount) : Math.abs(input.amount), type: input.type }, ...current]);
+        setTransactions((current) => [
+          {
+            id,
+            title: input.title,
+            meta: "剛剛 · 示範模式",
+            amount: input.type === "out" ? -Math.abs(input.amount) : Math.abs(input.amount),
+            type: input.type,
+            images: Array.isArray(input.images) ? input.images.filter((v) => typeof v === "string").slice(0, 3) : [],
+          },
+          ...current,
+        ]);
         return id;
       }
       const id = await addFirestoreTransaction(input);
@@ -137,7 +149,8 @@ export function ClassDataProvider({ children }: { children: ReactNode }) {
           const nextAmount = "amount" in patch ? Math.abs(Number(patch.amount) || 0) : Math.abs(t.amount);
           const nextType = patch.type ?? t.type;
           const signed = nextType === "out" ? -Math.abs(nextAmount) : Math.abs(nextAmount);
-          return { ...t, title: patch.title ?? t.title, amount: signed, type: nextType };
+          const nextImages = "images" in patch ? (Array.isArray(patch.images) ? patch.images.filter((v) => typeof v === "string").slice(0, 3) : t.images) : t.images;
+          return { ...t, title: patch.title ?? t.title, amount: signed, type: nextType, images: nextImages };
         }));
         return;
       }

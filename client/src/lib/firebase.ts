@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 // 將 GitHub Pages 的 Repository secrets / Actions variables 填入下列環境變數。
 // 本地開發可建立 client/.env.local；不要把真正的金鑰提交到 Git。
@@ -14,9 +15,11 @@ export const firebaseConfig = {
 };
 
 export const firebaseReady = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+export const storageReady = Boolean(firebaseReady && firebaseConfig.storageBucket);
 export const firebaseApp = firebaseReady ? initializeApp(firebaseConfig) : null;
 export const db = firebaseApp ? getFirestore(firebaseApp) : null;
 export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
+export const firebaseStorage = storageReady ? getStorage(firebaseApp!) : null;
 
 export const firebaseCollections = {
   transactions: "class701_transactions",

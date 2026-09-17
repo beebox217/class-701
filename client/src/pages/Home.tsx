@@ -36,7 +36,7 @@ import { deleteUser, updateEmail, updatePassword, type User } from "firebase/aut
 import { useAuth } from "@/contexts/AuthContext";
 import { useClassData } from "@/contexts/ClassDataContext";
 import { firebaseReady } from "@/lib/firebase";
-import { compressImageFile, createAuthUser, getStudentPaymentPaid, getTransactionImages, setSettingValue, setTransactionImages, type ClassTransaction, type PaymentItem, type TransactionKind } from "@/lib/firestore";
+import { compressImageFile, createAuthUser, getStudentPaymentPaid, getTransactionImages, setSettingValue, setTransactionImages, uploadTxImagesGetUrls, type ClassTransaction, type PaymentItem, type TransactionKind } from "@/lib/firestore";
 import { Camera, Image as ImageIcon, ZoomIn, AlertTriangle, ChevronLeft } from "lucide-react";
 
 const navItems = [
@@ -171,7 +171,7 @@ function Shell({ children, share }: { children: ReactNode; share?: { onOpen: () 
       {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : (isRootAdmin ? "最高管理者" : "系統管理者")}</span><button onClick={() => void logout()}>登出系統</button></div>}
     </header>
     <main className="main-content"><div className="page-heading"><div><p className="eyebrow">{yearLabel} · {className}</p><h2>{active}</h2></div>{share?.onOpen ? <button className="secondary-button tiny" onClick={share.onOpen} title="分享公開唯讀頁面" style={{ flex: "0 0 auto" }}><Share2 size={14} />分享</button> : null}</div>{children}</main>
-    <nav className="bottom-nav" aria-label="主要導覽">{navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? "nav-item active" : "nav-item"}><Icon size={19} strokeWidth={location === href ? 2.5 : 2} /><span>{label}</span></Link>)}</nav>
+    <nav className="bottom-nav" aria-label="主要導覽">{navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? "nav-item active" : "nav-item"}><Icon size={22} strokeWidth={2.5} /><span>{label}</span></Link>)}</nav>
     <footer className="footer"><span>{className} 班級自治會</span><span className="status-dot"><i /> {usingDemo ? "示範模式" : "已連線"}</span></footer>
   </div>;
 }
@@ -208,12 +208,19 @@ function Overview() {
     if (h >= 11 && h < 19) return "午安";
     return "晚安";
   }, []);
+  const [preview, setPreview] = useState<{ title: string; images: string[]; index: number } | null>(null);
+  const onOpenImages = (images: string[], title: string) => {
+    if (!images || !images.length) return;
+    setPreview({ title: String(title || "收支圖片"), images, index: 0 });
+  };
+  const previewImages = preview?.images || [];
+  const previewIndex = preview ? Math.max(0, Math.min(preview.index, Math.max(0, previewImages.length - 1))) : 0;
 
   return <>
     <section className="welcome-card"><div><span className="soft-label"><Sparkles size={13} /> 本月摘要</span><h3>{greeting}，{displayName}</h3><p>{loading ? "正在讀取班費資料…" : usingDemo ? "目前為示範模式，連線後即可同步資料。" : "班費帳務資料已同步完成。"}</p></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="mini-orbit"><CircleDollarSign size={28} /></div></div></section>
     <section className="metric-grid"><div className="metric-card accent"><span>目前結餘</span><strong>NT$ {(income - expense).toLocaleString()}</strong><small><ArrowUpRight size={14} />即時資料</small></div><div className="metric-card"><span>本月收入</span><strong>NT$ {income.toLocaleString()}</strong><small className="positive"><ArrowUpRight size={14} />{transactions.filter((item) => item.type === "in").length} 筆收入</small></div><div className="metric-card"><span>本月支出</span><strong>NT$ {expense.toLocaleString()}</strong><small className="negative"><ArrowDownLeft size={14} />{transactions.filter((item) => item.type === "out").length} 筆支出</small></div></section>
     <div className="section-row"><h3>最近收支</h3><Link href="/transactions" className="text-link">查看全部 <ChevronRight size={15} /></Link></div>
-    <div className="transaction-list">{transactions.length ? transactions.slice(0, 3).map((item) => <TransactionRow key={item.id} item={item} />) : <div className="empty-state"><ReceiptText size={30} /><strong>尚無資料</strong><span>請至收支頁新增第一筆收支紀錄。</span></div>}</div>
+    <div className="transaction-list">{transactions.length ? transactions.slice(0, 3).map((item) => <TransactionRow key={item.id} item={item} onOpenImages={onOpenImages} />) : <div className="empty-state"><ReceiptText size={30} /><strong>尚無資料</strong><span>請至收支頁新增第一筆收支紀錄。</span></div>}</div>
     <div className="section-row upcoming-heading"><h3>繳費進度</h3><Link href="/students" className="text-link">管理名單 <ChevronRight size={15} /></Link></div>
     {anyProgress ? progressPerPayment.map((p) => (
       <div className="progress-card" key={p.id}>
@@ -225,6 +232,31 @@ function Overview() {
     )) : (
       <div className="empty-state"><Users size={30} /><strong>尚無繳費項目</strong><span>請至「設定 → 繳費設定」新增第一筆繳費項目。</span></div>
     )}
+    {preview && previewImages.length > 0 ? <div className="modal-backdrop tx-preview" onClick={() => setPreview(null)}>
+      <div className="modal tx-preview" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 720 }}>
+        <div className="modal-head">
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <button onClick={() => setPreview((p) => p && p.index > 0 ? { ...p, index: p.index - 1 } : p)} disabled={previewIndex <= 0} aria-label="上一張"><ChevronLeft size={16} /></button>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#5d7670" }}>{previewIndex + 1} / {previewImages.length}</div>
+            <button onClick={() => setPreview((p) => p && p.index < p.images.length - 1 ? { ...p, index: p.index + 1 } : p)} disabled={previewIndex >= previewImages.length - 1} aria-label="下一張"><ChevronRight size={16} /></button>
+          </div>
+          <h3 style={{ flex: 1, minWidth: 0, marginLeft: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 16 }}>{preview.title}</h3>
+          <button onClick={() => setPreview(null)} aria-label="關閉"><X size={16} /></button>
+        </div>
+        <div style={{ position: "relative", display: "grid", placeItems: "center", background: "#f6f9f7", borderRadius: 18, padding: 12 }}>
+          <button className="gallery-arrow prev" onClick={() => setPreview((p) => p && p.index > 0 ? { ...p, index: p.index - 1 } : p)} disabled={previewIndex <= 0} aria-label="上一張"><ChevronLeft size={22} /></button>
+          <img key={previewImages[previewIndex]} src={previewImages[previewIndex]} alt="" style={{ width: "100%", maxHeight: 420, borderRadius: 14, objectFit: "contain", background: "#fff", boxShadow: "0 10px 22px rgba(20,54,52,.08)" }} />
+          <button className="gallery-arrow next" onClick={() => setPreview((p) => p && p.index < p.images.length - 1 ? { ...p, index: p.index + 1 } : p)} disabled={previewIndex >= previewImages.length - 1} aria-label="下一張"><ChevronRight size={22} /></button>
+        </div>
+        <div style={{ marginTop: 14, display: "flex", gap: 10, padding: "10px 4px", overflowX: "auto", minHeight: 58 }}>
+          {previewImages.map((src, i) => (
+            <button key={i} onClick={() => setPreview((p) => p ? { ...p, index: i } : p)} style={{ flex: "0 0 48px", width: 48, height: 48, borderRadius: 12, padding: 0, border: previewIndex === i ? "2px solid var(--teal,#2d7a6a)" : "2px solid transparent", overflow: "hidden", background: "#eef4f0" }} aria-label={`第${i + 1}張`}>
+              <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div> : null}
   </>;
 }
 
@@ -347,8 +379,24 @@ function TransactionsPage() {
       return;
     }
     try {
-      await updateTransaction(editTx.tx.id, { title: trimmedTitle, amount: numericAmount, type: editTx.kind });
-      setTransactionImages(editTx.tx.id, editTx.images);
+      let urls: string[] = [];
+      const hasDataUrl = editTx.images.some((v) => v.startsWith("data:image/"));
+      if (hasDataUrl) {
+        urls = await uploadTxImagesGetUrls(editTx.tx.id, editTx.images).catch((err) => {
+          toast.warning("圖片跨裝置同步失敗（僅在此裝置可見）：" + (err instanceof Error ? err.message : ""));
+          return [] as string[];
+        });
+      } else {
+        urls = editTx.images.filter((v) => v.startsWith("https://") || v.startsWith("gs://")).slice(0, TX_IMG_MAX);
+      }
+      const combined = urls.length ? urls.slice(0, TX_IMG_MAX) : editTx.images.slice(0, TX_IMG_MAX);
+      await updateTransaction(editTx.tx.id, {
+        title: trimmedTitle,
+        amount: numericAmount,
+        type: editTx.kind,
+        images: combined,
+      });
+      setTransactionImages(editTx.tx.id, combined);
       const nextHistory = pushTxTitleHistory(trimmedTitle);
       setTitleHistory(nextHistory);
       setEditTx(null);
@@ -388,8 +436,9 @@ function TransactionsPage() {
     const setterBusy = target === "add" ? setImageBusy : setEditImageBusy;
     setterBusy(true);
     try {
-      const compressed = await Promise.all(picked.map((f) => compressImageFile(f, 1600, 0.78)));
-      setRef((current: string[]) => [...current, ...compressed].slice(0, TX_IMG_MAX));
+      const results = await Promise.all(picked.map((f) => compressImageFile(f, 1280, 0.7)));
+      const dataUrls = results.map((r) => r.dataUrl).filter((v) => typeof v === "string" && v.startsWith("data:image/"));
+      setRef((current: string[]) => [...current, ...dataUrls].slice(0, TX_IMG_MAX));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "圖片處理失敗");
     } finally {
@@ -406,7 +455,15 @@ function TransactionsPage() {
     }
     try {
       const txId = await addTransaction({ title: trimmedTitle, amount: numericAmount, type: kind });
-      if (images.length) setTransactionImages(txId, images);
+      if (images.length) {
+        const urls = await uploadTxImagesGetUrls(txId, images).catch((err) => {
+          toast.warning("圖片跨裝置同步失敗（僅在此裝置可見）：" + (err instanceof Error ? err.message : ""));
+          return [] as string[];
+        });
+        const combined = urls && urls.length ? urls.slice(0, TX_IMG_MAX) : images.slice(0, TX_IMG_MAX);
+        setTransactionImages(txId, combined);
+        if (urls && urls.length) await updateTransaction(txId, { images: urls.slice(0, TX_IMG_MAX) }).catch(() => void 0);
+      }
       const nextHistory = pushTxTitleHistory(trimmedTitle);
       setTitleHistory(nextHistory);
       resetForm(); setShowForm(false);
@@ -1302,6 +1359,7 @@ export default function Home() {
       const last = window.localStorage.getItem(k);
       if (last !== lastShareBundleKey) {
         window.localStorage.removeItem("class701_share_b64");
+        window.localStorage.removeItem("class701_share_code_v1");
         window.localStorage.setItem(k, lastShareBundleKey);
       }
     } catch { /* noop */ }
@@ -1317,6 +1375,76 @@ export default function Home() {
   function cacheShareB64(v: string) {
     try {
       window.localStorage.setItem("class701_share_b64", v);
+    } catch { /* noop */ }
+  }
+  const SHORT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  function makeShortCode(len = 6): string {
+    let s = "";
+    const arr = new Uint32Array(len);
+    (crypto as unknown as Crypto).getRandomValues(arr);
+    for (let i = 0; i < len; i += 1) s += SHORT_CODE_ALPHABET.charAt(arr[i] % SHORT_CODE_ALPHABET.length);
+    return s;
+  }
+  type ShareCodeEntry = { b: string; t: number; c?: string };
+  const SHARE_CODE_KEY = "class701_share_codes_v1";
+  function getShareCodes(): Record<string, ShareCodeEntry> {
+    try {
+      const raw = window.localStorage.getItem(SHARE_CODE_KEY);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") return obj as Record<string, ShareCodeEntry>;
+      return {};
+    } catch { return {}; }
+  }
+  function saveShareCodes(obj: Record<string, ShareCodeEntry>) {
+    try {
+      // LRU 上限 20 組
+      const entries = Object.entries(obj).sort((a, b) => Number(b[1].t || 0) - Number(a[1].t || 0));
+      const trimmed: Record<string, ShareCodeEntry> = {};
+      entries.slice(0, 20).forEach(([k, v]) => { trimmed[k] = v; });
+      window.localStorage.setItem(SHARE_CODE_KEY, JSON.stringify(trimmed));
+    } catch { /* noop */ }
+  }
+  function lookupShortCode(code: string): string | null {
+    const all = getShareCodes();
+    const entry = all[code];
+    if (!entry || !entry.b) return null;
+    // 命中時更新 timestamp，代表有被使用過
+    entry.t = Date.now();
+    all[code] = entry;
+    saveShareCodes(all);
+    return entry.b;
+  }
+  function upsertShortCode(b64: string, classNameHint?: string): string {
+    const all = getShareCodes();
+    // 若完全相同 b64 已存在，直接回傳既有 code 避免無限膨脹
+    const existing = Object.entries(all).find(([, v]) => v && v.b === b64);
+    if (existing) {
+      const [code, entry] = existing;
+      entry.t = Date.now();
+      if (classNameHint) entry.c = classNameHint;
+      all[code] = entry;
+      saveShareCodes(all);
+      return code;
+    }
+    let code = makeShortCode(6);
+    let tries = 0;
+    while (all[code] && tries < 10) { code = makeShortCode(6); tries += 1; }
+    all[code] = { b: b64, t: Date.now(), c: classNameHint };
+    saveShareCodes(all);
+    return code;
+  }
+  const [pendingShareCode, setPendingShareCode] = useState<string | null>(null);
+  const lastShareCodeKey = useMemo(() => lastShareBundleKey, [lastShareBundleKey]);
+  function getCachedShareCode(): string | null {
+    try {
+      invalidateShareCacheIfNeeded();
+      return window.localStorage.getItem("class701_share_code_v1");
+    } catch { return null; }
+  }
+  function cacheShareCode(v: string) {
+    try {
+      window.localStorage.setItem("class701_share_code_v1", v);
     } catch { /* noop */ }
   }
   async function produceShareB64(): Promise<string> {
@@ -1399,17 +1527,36 @@ export default function Home() {
     return b64;
   }
   function buildShareUrl(): string {
-    const b64 = pendingShareB64 || getCachedShareB64() || "";
     const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
+    const code = pendingShareCode || getCachedShareCode();
+    if (code) return `${base}open.html?d=${code}`;
+    const b64 = pendingShareB64 || getCachedShareB64();
+    if (!b64) return `${base}open.html?d=`;
     return `${base}open.html?d=${b64}`;
+  }
+  async function produceShareShortCode(): Promise<string> {
+    let code = getCachedShareCode();
+    if (code && typeof code === "string" && code.length >= 4 && code.length <= 12) {
+      // 確認 share_codes 有對應 b64（防 cache 有 code 但 b64 不見）
+      const b64 = lookupShortCode(code);
+      if (b64) return code;
+    }
+    const b64 = await produceShareB64();
+    code = upsertShortCode(b64, String(settings.className ?? undefined));
+    cacheShareCode(code);
+    return code;
   }
   async function openShareAsync() {
     try {
       setShareUrl("");
-      const b64 = await produceShareB64();
-      setPendingShareB64(b64);
+      setPendingShareB64(null);
+      setPendingShareCode(null);
+      const code = await produceShareShortCode();
+      setPendingShareCode(code);
+      const b64 = lookupShortCode(code) || "";
+      setPendingShareB64(b64 || null);
       const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
-      setShareUrl(`${base}open.html?d=${b64}`);
+      setShareUrl(`${base}open.html?d=${code}`);
       setShareModal(true);
     } catch (_err) {
       toast.error("分享連結建立失敗，請重試");
@@ -1421,6 +1568,10 @@ export default function Home() {
   }
   const shortShareUrl = useMemo(() => {
     if (!shareUrl) return "";
+    // 短碼版 URL 約 25~35 字，直接完整顯示即可；若仍為舊長版，保留省略機制
+    const m = /[?&]d=([^&]+)/.exec(shareUrl);
+    const d = m ? m[1] : "";
+    if (d && d.length <= 12) return shareUrl;
     if (shareUrl.length <= 140) return shareUrl;
     const queryStart = shareUrl.indexOf("?d=");
     if (queryStart >= 0) {
@@ -1431,8 +1582,8 @@ export default function Home() {
     return `${shareUrl.slice(0, 36)}…${shareUrl.slice(-12)}`;
   }, [shareUrl]);
   function copyShare() {
-    const link = (shareUrl && shareUrl.includes("?d=") && shareUrl.endsWith("準備中…") === false) ? shareUrl : buildShareUrl();
-    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
+    const link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
+    if (!link || link.endsWith("?d=")) { toast.info("正在產生短連結，請稍候再試"); return; }
     const fallback = () => {
       const ta = document.createElement("textarea");
       ta.value = link;
@@ -1451,8 +1602,8 @@ export default function Home() {
     }
   }
   function openShareTab() {
-    const link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
-    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
+    const link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…") && !shareUrl.endsWith("?d=")) ? shareUrl : buildShareUrl();
+    if (!link || link.endsWith("?d=")) { toast.info("正在產生短連結，請稍候再試"); return; }
     window.open(link, "_blank", "noopener");
   }
   async function shareToLineAsync() {
@@ -1461,20 +1612,22 @@ export default function Home() {
     const message = `【${classNameRaw} 班費公開頁】
 結餘：$${balanceRaw.toLocaleString()}｜收入 $${income.toLocaleString()}｜支出 $${expense.toLocaleString()}
 點擊連結查看完整收支明細與繳費進度（唯讀免登入）：`;
-    let link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
-    if (!link || link.endsWith("?d=")) {
+    let link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…") && !shareUrl.endsWith("?d=")) ? shareUrl : "";
+    if (!link) {
       try {
-        const b64 = await produceShareB64();
-        setPendingShareB64(b64);
+        const code = await produceShareShortCode();
+        setPendingShareCode(code);
+        const b64 = lookupShortCode(code) || "";
+        setPendingShareB64(b64 || null);
         const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
-        link = `${base}open.html?d=${b64}`;
+        link = `${base}open.html?d=${code}`;
         setShareUrl(link);
       } catch { /* ignore */ }
     }
-    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
+    if (!link || link.endsWith("?d=")) { toast.info("正在產生短連結，請稍候再試"); return; }
     const encoded = `${encodeURIComponent(message)}%0A${encodeURIComponent(link)}`;
-    // LINE 行動版會有 URL 長度限制，若超過 5000 則改用 copyShare + 提示
-    if (encoded.length > 5000) {
+    // LINE 行動版 URL 過長會被截斷，短碼版正常不會超過 300 字；仍保留安全門檻 500
+    if (encoded.length > 500) {
       copyShare();
       toast.info("連結較長，已自動複製；請在 LINE 聊天室貼上傳送");
       return;
@@ -1484,20 +1637,22 @@ export default function Home() {
   }
   function shareToLine() { void shareToLineAsync(); }
   async function nativeShare() {
-    let link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
-    if (!link || link.endsWith("?d=")) {
+    let link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…") && !shareUrl.endsWith("?d=")) ? shareUrl : "";
+    if (!link) {
       try {
-        const b64 = await produceShareB64();
-        setPendingShareB64(b64);
+        const code = await produceShareShortCode();
+        setPendingShareCode(code);
+        const b64 = lookupShortCode(code) || "";
+        setPendingShareB64(b64 || null);
         const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
-        link = `${base}open.html?d=${b64}`;
+        link = `${base}open.html?d=${code}`;
         setShareUrl(link);
       } catch { /* ignore */ }
     }
     const classNameRaw = String(settings.className ?? "701 班");
     const balanceRaw = income - expense;
     if (!navigator.share) return;
-    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
+    if (!link || link.endsWith("?d=")) { toast.info("正在產生短連結，請稍候再試"); return; }
     try {
       await navigator.share({
         title: `${classNameRaw} 班費公開頁`,

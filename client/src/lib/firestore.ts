@@ -11,7 +11,8 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { db, firebaseCollections, firebaseReady } from "@/lib/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db, firebaseCollections, firebaseReady, firebaseStorage, storageReady } from "@/lib/firebase";
 
 export type TransactionKind = "in" | "out";
 
@@ -28,6 +29,7 @@ export type ClassTransaction = {
   amount: number;
   type: TransactionKind;
   createdAt?: number;
+  images?: string[];
 };
 
 export type ClassStudent = {
@@ -66,12 +68,21 @@ function requireFirestore() {
   if (!firebaseReady || !db) throw new Error("系統尚未連線，請先設定資料庫連線。");
   return db;
 }
+function requireStorage() {
+  if (!storageReady || !firebaseStorage) throw new Error("尚未設定 Storage，圖片無法跨裝置同步。請至 Firebase 開啟 Cloud Storage 並填入 VITE_FIREBASE_STORAGE_BUCKET。");
+  return firebaseStorage;
+}
 
 function timestampToNumber(value: unknown) {
   if (value && typeof value === "object" && "toMillis" in value && typeof value.toMillis === "function") {
     return value.toMillis();
   }
   return typeof value === "number" ? value : Date.now();
+}
+
+function normalizeImages(images: unknown): string[] {
+  if (!Array.isArray(images)) return [];
+  return images.filter((v) => typeof v === "string" && (v.startsWith("https://") || v.startsWith("gs://") || v.startsWith("data:image/"))).slice(0, 3);
 }
 
 export async function listTransactions(): Promise<ClassTransaction[]> {
@@ -88,24 +99,28 @@ export async function listTransactions(): Promise<ClassTransaction[]> {
       amount: type === "out" ? -amount : amount,
       type,
       createdAt: timestampToNumber(data.createdAt),
+      images: normalizeImages(data.images),
     };
   });
 }
 
-export async function addTransaction(input: { title: string; amount: number; type: TransactionKind; meta?: string }) {
+export async function addTransaction(input: { title: string; amount: number; type: TransactionKind; meta?: string; images?: string[] }) {
   const firestore = requireFirestore();
-  const snapshot = await addDoc(collection(firestore, firebaseCollections.transactions), {
+  const payload: Record<string, unknown> = {
     title: input.title,
     amount: Math.abs(input.amount),
     type: input.type,
     meta: input.meta ?? "701 班費管理",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
+  const norm = normalizeImages(input.images);
+  if (norm.length) payload.images = norm;
+  const snapshot = await addDoc(collection(firestore, firebaseCollections.transactions), payload);
   return snapshot.id;
 }
 
-export async function updateTransaction(id: string, patch: { title?: string; amount?: number; type?: TransactionKind; meta?: string }) {
+export async function updateTransaction(id: string, patch: { title?: string; amount?: number; type?: TransactionKind; meta?: string; images?: string[] }) {
   if (!id) throw new Error("缺少編號");
   const firestore = requireFirestore();
   const payload: Record<string, unknown> = { updatedAt: serverTimestamp() };
@@ -113,6 +128,10 @@ export async function updateTransaction(id: string, patch: { title?: string; amo
   if ("amount" in patch) payload.amount = Math.max(1, Math.floor(Math.abs(Number(patch.amount) || 0)));
   if ("type" in patch) payload.type = patch.type;
   if ("meta" in patch) payload.meta = patch.meta;
+  if ("images" in patch) {
+    const norm = normalizeImages(patch.images);
+    payload.images = norm;
+  }
   await updateDoc(doc(firestore, firebaseCollections.transactions, id), payload as any);
 }
 
@@ -326,7 +345,7 @@ function saveTxImagesIndex(index: Record<string, string[]>) {
   }
 }
 
-export async function compressImageFile(file: File, maxEdge = 1600, quality = 0.78): Promise<string> {
+export async function compressImageFile(file: File, maxEdge = 1280, quality = 0.7): Promise<{ dataUrl: string; blob: Blob }> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const fr = new FileReader();
     fr.onerror = () => reject(new Error("圖片讀取失敗"));
@@ -348,18 +367,83 @@ export async function compressImageFile(file: File, maxEdge = 1600, quality = 0.
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("無法建立圖片壓縮環境");
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", quality);
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("壓縮失敗"))),
+      "image/jpeg",
+      quality
+    );
+  });
+  const url = canvas.toDataURL("image/jpeg", quality);
+  return { dataUrl: url, blob };
 }
 
+export function dataUrlToBlob(dataUrl: string): Blob {
+  // data:image/jpeg;base64,XXXX
+  const [head, body] = String(dataUrl).split(",", 2);
+  const mimeMatch = /data:(image\/[a-z0-9.+-]+);base64/i.exec(head || "");
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const binary = atob(body || "");
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+export async function uploadTxImagesGetUrls(txId: string, dataUrls: string[]): Promise<string[]> {
+  if (!Array.isArray(dataUrls) || !dataUrls.length) return [];
+  const filtered = dataUrls.filter((v) => typeof v === "string");
+  if (!filtered.length) return [];
+  const storage = requireStorage();
+  const results: string[] = [];
+  for (let i = 0; i < filtered.length; i += 1) {
+    const d = filtered[i];
+    let blob: Blob;
+    if (d.startsWith("data:image/")) blob = dataUrlToBlob(d);
+    else continue; // 已上傳過的 https:// 跳過（維持原樣）
+    const path = `txs/${txId}/img_${i}.jpg`;
+    const r = ref(storage, path);
+    const snapshot = await uploadBytes(r, blob, { contentType: "image/jpeg", cacheControl: "public,max-age=31536000,immutable" });
+    const url = await getDownloadURL(snapshot.ref);
+    results.push(url);
+  }
+  // 把非 data:image 的（既存 URL）接回來維持順序
+  const final: string[] = [];
+  let uploadedIdx = 0;
+  for (let i = 0; i < dataUrls.length; i += 1) {
+    const d = dataUrls[i];
+    if (typeof d === "string" && d.startsWith("data:image/")) {
+      if (uploadedIdx < results.length) { final.push(results[uploadedIdx]); uploadedIdx += 1; }
+    } else if (typeof d === "string" && (d.startsWith("https://") || d.startsWith("gs://"))) {
+      final.push(d);
+    }
+  }
+  return final.slice(0, 3);
+}
+
+// 跨裝置優先：傳入 tx 物件（從 Firestore 來），優先用 tx.images；本機當快取雙寫
+const txImageFirestoreCache: Record<string, string[]> = {};
+export function registerTransactionImagesFromFirestore(txs: Array<Pick<ClassTransaction, "id" | "images">>) {
+  if (!Array.isArray(txs)) return;
+  txs.forEach((t) => {
+    if (!t || !t.id) return;
+    const imgs = Array.isArray(t.images) ? t.images.filter((v) => typeof v === "string") : [];
+    if (imgs.length) txImageFirestoreCache[t.id] = imgs;
+  });
+}
 export function getTransactionImages(txId: string): string[] {
+  const fromFirestore = txImageFirestoreCache[txId];
+  if (fromFirestore && fromFirestore.length) return fromFirestore.slice();
   const index = loadTxImagesIndex();
   return Array.isArray(index[txId]) ? index[txId].filter((v) => typeof v === "string") : [];
 }
 
 export function setTransactionImages(txId: string, images: string[]): string[] {
   const index = loadTxImagesIndex();
-  const next = images.filter((v) => typeof v === "string" && v.startsWith("data:image/")).slice(0, 3);
-  if (next.length) index[txId] = next; else delete index[txId];
+  const next = images.filter((v) => typeof v === "string").slice(0, 3);
+  if (next.length) index[txId] = next.filter((v) => v.startsWith("data:image/") || v.startsWith("https://") || v.startsWith("gs://")); else delete index[txId];
+  // 同步快取
+  if (next.length) txImageFirestoreCache[txId] = next.slice(); else delete txImageFirestoreCache[txId];
   saveTxImagesIndex(index);
   return next;
 }

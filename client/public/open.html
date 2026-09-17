@@ -101,7 +101,7 @@
       .progress-bar { height:10px;background:#edf2ee;border-radius:999px;margin:18px 0 12px;overflow:hidden; }
       .progress-bar i { display:block;height:100%;background:var(--teal);border-radius:99px; }
       .progress-card p { color:var(--muted);font-size:13px;margin:0;display:flex;align-items:center;gap:6px; line-height:1.65; }
-      .unpaid-seats { display:block; margin-top:10px; padding:10px 12px; border-radius:12px; background:#fff0ed; color:#c94d36; font-weight:700; line-height:1.6; word-break:break-word; overflow-wrap:anywhere; }
+      .progress-card .unpaid-seats, .unpaid-seats { display:block !important; margin-top:10px !important; padding:10px 12px !important; border-radius:12px !important; background:#fff0ed !important; color:#c94d36 !important; font-weight:700 !important; line-height:1.65 !important; word-break:break-word; overflow-wrap:anywhere; font-size:13px !important; text-indent:0 !important; }
       .empty-state { padding:17px;color:var(--muted);text-align:center;font-size:13px;background:#f6faf7;border-radius:14px; display:flex; flex-direction:column; align-items:center; gap:8px; }
       .empty-state strong { color:var(--ink); font-size:15px; }
       .footer-note { margin-top:28px; display:flex; justify-content:space-between; align-items:center; color:#91afaa; font-size:12px; }
@@ -269,11 +269,60 @@
           }
           return null;
         }
+        function getShareCodesSync() {
+          try {
+            var raw = window.localStorage.getItem("class701_share_codes_v1");
+            if (!raw) return {};
+            try {
+              var obj = JSON.parse(raw);
+              if (obj && typeof obj === "object") return obj;
+            } catch (_e) { /* ignore */ }
+          } catch (_e2) { /* ignore */ }
+          return {};
+        }
+        function saveShareCodesSync(obj) {
+          try {
+            var entries = Object.keys(obj || {}).map(function (k) { return [k, obj[k]]; }).sort(function (a, b) {
+              return Number((b[1] && b[1].t) || 0) - Number((a[1] && a[1].t) || 0);
+            }).slice(0, 20);
+            var trimmed = {};
+            entries.forEach(function (kv) { trimmed[kv[0]] = kv[1]; });
+            window.localStorage.setItem("class701_share_codes_v1", JSON.stringify(trimmed));
+          } catch (_e) { /* noop */ }
+        }
+        function lookupShortCodeSync(code) {
+          var all = getShareCodesSync();
+          var entry = all && all[code];
+          if (!entry || !entry.b) return null;
+          entry.t = Date.now();
+          all[code] = entry;
+          saveShareCodesSync(all);
+          return String(entry.b);
+        }
+        var __SHORT_CODE_HINT__ = null;
         async function decodeBundle(qs) {
           try {
             const url = new URL(String(window.location.href));
             const d = url.searchParams.get("d") || "";
             if (!d) return null;
+            // 短碼：長度 4~12 且為英數（不含 - _）
+            if (/^[A-Za-z0-9]{4,12}$/.test(d)) {
+              const b64 = lookupShortCodeSync(d);
+              if (!b64) {
+                __SHORT_CODE_HINT__ = { code: d };
+                return null;
+              }
+              // 轉換成一般 base64 url 走 v=2 正常解碼流程
+              const buf = b64UrlToBytes(b64);
+              if (!buf || buf.length < 2) return null;
+              const flag = buf[0];
+              const payload = buf.subarray(1);
+              let jsonBytes = payload;
+              if (flag === 0x7a) jsonBytes = await inflateBytes(payload);
+              else if (flag !== 0x6a) return null;
+              const raw = JSON.parse(bytesToStr(jsonBytes));
+              return expandBundle(raw);
+            }
             // 舊 v=1 非 base64-url 包壓縮（單純 base64 包 JSON，首字元幾乎都是 "ey"，嘗試直接 JSON）
             if (d.charAt(0) === "e" && d.charAt(1) === "y") {
               try {
@@ -341,14 +390,24 @@
         function render(data) {
           const root = document.getElementById("root");
           if (!data) {
-            document.title = "連結無效 · 班費公開頁";
+            const codeHint = __SHORT_CODE_HINT__ && __SHORT_CODE_HINT__.code ? String(__SHORT_CODE_HINT__.code) : "";
+            const isShortMissing = codeHint.length > 0;
+            const titleText = isShortMissing ? "短連結需要由原裝置開啟" : "連結已失效或格式錯誤";
+            const h3Text = isShortMissing
+              ? "這個連結是 LINE 短連結版本"
+              : "連結已失效或格式錯誤";
+            const pText = isShortMissing
+              ? `班費公開頁的短連結（代碼 ${codeHint}）只有「當初產生此連結的那支手機/電腦」才有完整資料。請直接請分享者從班費管理系統內，重新按【分享 → 複製連結】後貼上給您，或請分享者點擊「預覽頁」直接打開給您。`
+              : "請由系統內重新建立分享連結後再開啟。";
+            const softLabel = isShortMissing ? `${sparkles()} 此為短碼分享` : `${sparkles()} 無法讀取分享資料`;
+            document.title = `${titleText} · 班費公開頁`;
             root.innerHTML = `
               <div class="public-top" style="margin-top:6px">
                 <div class="brand-mark">${classLogo(26,26)}</div>
                 <div class="brand-copy"><p class="eyebrow">CLASS FUND SYSTEM</p><h1>班費公開頁</h1></div>
               </div>
-              <section class="welcome-card"><div><span class="soft-label">${sparkles()} 無法讀取分享資料</span><h3>連結已失效或格式錯誤</h3><p>請由系統內重新建立分享連結後再開啟。</p></div><div class="mini-orbit">${circleDollarIcon()}</div></section>
-              ${renderEmpty("目前沒有可顯示的資料", "請由系統內重新建立分享連結後再開啟。")}`;
+              <section class="welcome-card"><div><span class="soft-label">${softLabel}</span><h3>${h3Text}</h3><p style="opacity:.92">${pText}</p></div><div class="mini-orbit">${circleDollarIcon()}</div></section>
+              ${renderEmpty(isShortMissing ? "短碼僅在原裝置有效" : "目前沒有可顯示的資料", isShortMissing ? "請分享者重新按【分享按鈕 → 複製連結】取得最新短連結後貼上，或請分享者改按下「預覽頁」將頁面畫面傳送給您。" : "請由系統內重新建立分享連結後再開啟。")}`;
             bindPreview([]);
             return;
           }
@@ -379,7 +438,7 @@
           const payments = Array.isArray(data.payments) ? data.payments : [];
           let progressHTML = "";
           if (payments.length) {
-            progressHTML = `<div class="section-row upcoming-heading"><h3>繳費進度</h3></div>` +
+            progressHTML =
               payments.map((p) => {
                 const sc = Number(p.studentCount) || 0;
                 const pc = Number(p.paidCount) || 0;
@@ -388,7 +447,7 @@
                 const unpaid = Math.max(sc - pc, 0);
                 const unpaidSeats = typeof p.unpaidSeats === "string" ? p.unpaidSeats : "";
                 const unpaidChip = unpaidSeats
-                  ? `<p class="unpaid-seats">待繳學生座號：${unpaidSeats.replace(/</g, "&lt;")}</p>`
+                  ? `<p class="unpaid-seats" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff0ed;color:#c94d36;font-weight:700;line-height:1.65;word-break:break-word;overflow-wrap:anywhere;display:block;font-size:13px">待繳學生座號：${unpaidSeats.replace(/</g, "&lt;")}</p>`
                   : `<p class="unpaid-seats" style="background:#eaf6ee;color:#2d7a6a">✓ 全數繳清，感謝家長配合 🎉</p>`;
                 const text = sc
                   ? `${sc} 位學生 · 每位 NT$ ${fmt(p.amount)}`
