@@ -37,7 +37,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useClassData } from "@/contexts/ClassDataContext";
 import { firebaseReady } from "@/lib/firebase";
 import { compressImageFile, createAuthUser, getStudentPaymentPaid, getTransactionImages, setSettingValue, setTransactionImages, type ClassTransaction, type PaymentItem, type TransactionKind } from "@/lib/firestore";
-import { Camera, Image as ImageIcon, ZoomIn, AlertTriangle } from "lucide-react";
+import { Camera, Image as ImageIcon, ZoomIn, AlertTriangle, ChevronLeft } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "總覽", icon: LayoutDashboard },
@@ -152,6 +152,14 @@ function Shell({ children, share }: { children: ReactNode; share?: { onOpen: () 
     ((user as User | null)?.displayName as string | undefined) ??
     (currentAdminDisplay as string | undefined) ??
     "劉老師";
+  const userEmail = String(user?.email ?? "").toLowerCase();
+  const userDisplayName = String(displayName ?? "");
+  const isRootAdmin =
+    isDemo ||
+    userDisplayName.includes("則鈞爸爸") ||
+    userDisplayName.includes("則鈞") ||
+    /zejun|zejyun|zejin|zejeng/.test(userEmail) ||
+    /zejun|zejyun|zejin|zejeng/.test(String(adminsMap[user?.uid ?? ""]?.displayName ?? "").toLowerCase());
   useEffect(() => {
     if (typeof document !== "undefined") document.title = `班費管理`;
   }, [className]);
@@ -160,7 +168,7 @@ function Shell({ children, share }: { children: ReactNode; share?: { onOpen: () 
     <header className="topbar">
       <div className="brand-lockup"><div className="brand-mark"><img src="./pwa-icon.svg" alt="LOGO" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /></div><div><p className="eyebrow">CLASS FUND SYSTEM</p><h1>{className} 班費管理</h1></div></div>
       <div className="header-actions"><button className="icon-button" aria-label="通知" onClick={() => toast("目前沒有新的通知")}><Bell size={19} /></button><button className="avatar" aria-label="使用者選單" onClick={() => setMenuOpen(!menuOpen)}>{displayName[0] || "劉"}</button></div>
-      {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : "系統管理者"}</span><button onClick={() => void logout()}>登出系統</button></div>}
+      {menuOpen && <div className="profile-popover"><strong>{displayName}</strong><span>{isDemo ? "示範模式管理者" : (isRootAdmin ? "最高管理者" : "系統管理者")}</span><button onClick={() => void logout()}>登出系統</button></div>}
     </header>
     <main className="main-content"><div className="page-heading"><div><p className="eyebrow">{yearLabel} · {className}</p><h2>{active}</h2></div>{share?.onOpen ? <button className="secondary-button tiny" onClick={share.onOpen} title="分享公開唯讀頁面" style={{ flex: "0 0 auto" }}><Share2 size={14} />分享</button> : null}</div>{children}</main>
     <nav className="bottom-nav" aria-label="主要導覽">{navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={location === href ? "nav-item active" : "nav-item"}><Icon size={19} strokeWidth={location === href ? 2.5 : 2} /><span>{label}</span></Link>)}</nav>
@@ -181,9 +189,17 @@ function Overview() {
   const income = transactions.filter((item) => item.type === "in").reduce((sum, item) => sum + Math.abs(item.amount), 0);
   const expense = transactions.filter((item) => item.type === "out").reduce((sum, item) => sum + Math.abs(item.amount), 0);
   const progressPerPayment = paymentItems.length ? paymentItems.map((item) => {
-    const paidCount = students.filter((s) => getStudentPaymentPaid(s, item.id)).length;
+    const paidStudents = students.filter((s) => getStudentPaymentPaid(s, item.id));
+    const paidCount = paidStudents.length;
     const rate = students.length ? Math.round((paidCount / students.length) * 100) : 0;
-    return { ...item, paidCount, rate };
+    const unpaidSeats = students
+      .filter((s) => !getStudentPaymentPaid(s, item.id))
+      .slice()
+      .sort((a, b) => String(a.no).localeCompare(String(b.no), "zh-Hant", { numeric: true }))
+      .map((s) => String(s.no).trim())
+      .filter(Boolean)
+      .join("、");
+    return { ...item, paidCount, rate, unpaidSeats };
   }) : [];
   const anyProgress = progressPerPayment[0];
   const greeting = useMemo(() => {
@@ -204,6 +220,7 @@ function Overview() {
         <div className="progress-top"><div><strong>{p.title}</strong><span>{students.length ? `${students.length} 位學生 · 每位 NT$ ${p.amount.toLocaleString()}` : "尚無學生資料"}</span></div><b>{p.rate}%</b></div>
         <div className="progress-bar"><i style={{ width: `${p.rate}%` }} /></div>
         <p><Check size={14} /> {p.paidCount} 位已完成繳費（NT$ {(p.paidCount * p.amount).toLocaleString()}），還有 {Math.max(students.length - p.paidCount, 0)} 位待處理</p>
+        <p className="unpaid-seats">{p.unpaidSeats ? `待繳學生座號：${p.unpaidSeats}` : "✓ 全數繳清，感謝家長配合 🎉"}</p>
       </div>
     )) : (
       <div className="empty-state"><Users size={30} /><strong>尚無繳費項目</strong><span>請至「設定 → 繳費設定」新增第一筆繳費項目。</span></div>
@@ -236,7 +253,7 @@ function pushTxTitleHistory(title: string): string[] {
   return next;
 }
 
-function TransactionRow({ item, onOpenImages, onMenu }: { item: ClassTransaction; onOpenImages?: (images: string[], title: string) => void; onMenu?: (item: ClassTransaction, anchor: HTMLElement) => void; }) {
+function TransactionRow({ item, onOpenImages, onMenu, seats }: { item: ClassTransaction; onOpenImages?: (images: string[], title: string) => void; onMenu?: (item: ClassTransaction, anchor: HTMLElement) => void; seats?: string; }) {
   const [images, setImages] = useState<string[]>(() => getTransactionImages(item.id));
   useEffect(() => {
     setImages(getTransactionImages(item.id));
@@ -246,11 +263,12 @@ function TransactionRow({ item, onOpenImages, onMenu }: { item: ClassTransaction
     if (onOpenImages) onOpenImages(images, item.title);
     else toast("點擊縮圖可查看圖片");
   };
-  return <div className="transaction-row"><div className={`tx-icon ${item.type}`}>{item.type === "in" ? <ArrowDownLeft size={17}/> : <ArrowUpRight size={17}/>}</div><div className="tx-copy"><strong>{item.title}</strong><span>{item.meta}</span>{images.length > 0 && <div className="tx-thumb-row" style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>{images.slice(0, 3).map((src, i) => <button key={i} className="tx-thumb" onClick={handleView} aria-label="查看圖片"><img src={src} alt="" style={{width:48,height:48,objectFit:"cover",borderRadius:10,display:"block",border:"1px solid #e5ece8"}} /></button>)}</div>}</div><div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,position:"relative"}}><strong className={item.amount > 0 ? "amount in" : "amount out"}>{item.amount > 0 ? "+" : "−"}{Math.abs(item.amount).toLocaleString()}</strong>{typeof onMenu === "function" ? <button className="more-button" onClick={(e) => { e.stopPropagation(); onMenu(item, e.currentTarget); }} aria-label="更多操作"><MoreHorizontal size={18}/></button> : null}</div></div>;
+  return <div className="transaction-row"><div className={`tx-icon ${item.type}`}>{item.type === "in" ? <ArrowDownLeft size={17}/> : <ArrowUpRight size={17}/>}</div><div className="tx-copy" style={{minWidth:0,flex:"1 1 0%"}}><div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"space-between"}}><strong style={{minWidth:0,flex:"1 1 auto",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.title}</strong>{images.length > 0 ? <button className="tx-title-image" onClick={handleView} aria-label="檢視圖片" title={`${images.length} 張附件`} style={{flex:"0 0 auto"}}><img src={images[0]} alt="" style={{width:40,height:40,objectFit:"cover",borderRadius:11,display:"block",border:"1.5px solid #dbe7e1",boxShadow:"0 3px 8px rgba(12,50,40,.12)"}} /></button> : null}</div>{images.length > 0 && images.length > 1 && <div className="tx-thumb-row" style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap"}}>{images.slice(1, 4).map((src, i) => <button key={i} className="tx-thumb" onClick={handleView} aria-label="查看圖片"><img src={src} alt="" style={{width:44,height:44,objectFit:"cover",borderRadius:9,display:"block",border:"1px solid #e5ece8"}} /></button>)}{images.length > 4 && <span style={{width:44,height:44,borderRadius:9,display:"grid",placeItems:"center",background:"#eef5f1",color:"#56736d",fontSize:12,fontWeight:800,border:"1px dashed #cfdfd7"}}>+{images.length - 4}</span>}</div>}</div><div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,position:"relative"}}><strong className={item.amount > 0 ? "amount in big-amount" : "amount out big-amount"} style={{letterSpacing:"-.03em"}}>{item.amount > 0 ? "+" : "−"}{Math.abs(item.amount).toLocaleString()}</strong>{typeof onMenu === "function" ? <button className="more-button" onClick={(e) => { e.stopPropagation(); onMenu(item, e.currentTarget); }} aria-label="更多操作"><MoreHorizontal size={18}/></button> : null}</div></div>;
 }
 
 function TransactionsPage() {
-  const { transactions, addTransaction, updateTransaction, removeTransaction, loading } = useClassData();
+  const { transactions, addTransaction, updateTransaction, removeTransaction, loading, settings, students } = useClassData();
+  const paymentItems = Array.isArray(settings.payment) ? (settings.payment as PaymentItem[]) : [];
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -401,7 +419,16 @@ function TransactionsPage() {
     setter((current: string[]) => current.filter((_, i) => i !== index));
   }
 
-  return <><div className="page-toolbar"><div><p className="muted">{loading ? "讀取中…" : (liveQuery ? `找到 ${filteredItems.length} 筆 / 共 ${transactions.length} 筆` : `共 ${transactions.length} 筆紀錄`)}</p><h3>2026 年 10 月</h3></div><div style={{display:"flex",gap:10,alignItems:"center"}}>{liveQuery ? <button className="secondary-button tiny" style={{padding:"0 14px",fontWeight:800}} onClick={clearSearch} title="清除搜尋">「{liveQuery}」 ✕</button> : null}<button className="secondary-button" onClick={openSearch} title="搜尋收支"><Search size={17}/>搜尋</button><button className="primary-button" onClick={() => setShowForm(true)}><Plus size={17}/>新增</button></div></div><div className="filter-row"><button className={filter === "all" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("all")}>全部</button><button className={filter === "in" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("in")}>收入</button><button className={filter === "out" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("out")}>支出</button></div><div className="transaction-list full-list" onClick={closeMenu}>{filteredItems.length ? filteredItems.map((item) => <TransactionRow key={item.id} item={item} onOpenImages={(imgs, t) => imgs.length && setPreview({ title: t, images: imgs, index: 0 })} onMenu={(tx, anchor) => openMenu(tx, anchor)} />) : <div className="empty-state"><ReceiptText size={30}/><strong>{liveQuery ? "沒有符合的結果" : "目前尚無收支紀錄"}</strong><span>{liveQuery ? "請更換關鍵字或清除搜尋。" : "新增第一筆資料後會自動保存。"}</span></div>}</div>{searchModal && <div className="modal-backdrop" onClick={() => { setSearchQuery(liveQuery); setSearchModal(false); }}><div className="modal" style={{maxWidth:460}} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{display:"flex",gap:10,alignItems:"flex-start",flex:1}}><span style={{width:42,height:42,borderRadius:12,background:"#e2f0e9",color:"var(--teal)",display:"grid",placeItems:"center",flex:"0 0 auto"}}><Search size={19}/></span><div style={{flex:1}}><h3 style={{margin:"2px 0 4px",fontSize:19,letterSpacing:"-.02em"}}>搜尋收支</h3><p style={{margin:0,color:"var(--muted)",fontSize:13,lineHeight:1.5}}>輸入關鍵字查找項目名稱、類型（收入/支出）或金額，按下「套用」立即顯示結果。</p></div></div><button onClick={() => { setSearchQuery(liveQuery); setSearchModal(false); }} aria-label="關閉"><X size={18}/></button></div><label>關鍵字<input autoFocus placeholder="例如：班費、支出、500" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") applySearch(); if (event.key === "Escape") { setSearchQuery(liveQuery); setSearchModal(false); } }} /></label><div style={{display:"flex",gap:10,marginTop:6}}><button className="secondary-button wide" onClick={clearSearch}>清除</button><button className="primary-button wide" onClick={applySearch}>套用</button></div></div></div>}{menuState && <><div className="popover-backdrop" onClick={closeMenu} style={{position:"fixed",inset:0,zIndex:15}}/><div className="popover-menu" style={{position:"fixed",top:menuState.top,left:menuState.left,zIndex:16,minWidth:164,background:"#fff",border:"1px solid var(--line)",borderRadius:14,padding:6,boxShadow:"0 10px 26px rgba(20,60,40,.14)"}}><button className="popover-item" onClick={() => handleEditOpen(menuState.item)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--ink)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#f2f7f4")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Pencil size={15}/> 編輯</button><button className="popover-item danger" onClick={() => { setRemoveConfirm({ tx: menuState.item }); setMenuState(null); }} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--coral)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#fef1ed")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Trash2 size={15}/> 刪除</button></div></>}{showForm && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>新增收支</h3><button onClick={() => { resetForm(); setShowForm(false); }}><X size={18}/></button></div><label>類型<select value={kind} onChange={(event) => setKind(event.target.value as TransactionKind)}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={amount} onChange={(event) => setAmount(event.target.value)} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "add")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void saveTransaction()}>儲存</button></div></div>}{editTx && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>編輯收支</h3><button onClick={() => setEditTx(null)}><X size={18}/></button></div><label>類型<select value={editTx.kind} onChange={(event) => setEditTx({ ...editTx, kind: event.target.value as TransactionKind })}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={editTx.title} onChange={(event) => setEditTx({ ...editTx, title: event.target.value })} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={editTx.amount} onChange={(event) => setEditTx({ ...editTx, amount: event.target.value })} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{editTx.images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "edit")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{editTx.images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void handleEditSave()}>儲存變更</button></div></div>}{preview && <div className="modal-backdrop" onClick={() => setPreview(null)}><div className="modal tx-preview" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h3 style={{fontSize:16}}>{preview.title}</h3><button onClick={() => setPreview(null)}><X size={18}/></button></div><div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:200,margin:"6px 0 14px",background:"#f4f8f6",borderRadius:14,overflow:"hidden",padding:8}}><img src={preview.images[preview.index]} alt="" style={{width:"100%",maxHeight:"60vh",objectFit:"contain",display:"block"}} /></div><div style={{display:"flex",gap:8,overflowX:"auto",padding:"2px 0 4px"}}>{preview.images.map((src, i) => <button key={i} onClick={() => setPreview({ ...preview, index: i })} style={{flex:"0 0 auto",padding:2,borderRadius:12,border: i === preview.index ? "2px solid var(--teal)" : "2px solid transparent",background:"#fff"}}><img src={src} alt="" style={{width:56,height:56,objectFit:"cover",borderRadius:8,display:"block"}} /></button>)}</div><div style={{textAlign:"center",color:"#78908a",fontSize:12,fontWeight:800,marginTop:6}}>{preview.index + 1} / {preview.images.length}</div></div></div>}<ConfirmDialog open={Boolean(removeConfirm)} title="確認刪除這筆收支？" message={"「" + (removeConfirm?.tx.title ?? "") + "」一經刪除，包含附件圖片在內無法復原。"} onCancel={() => setRemoveConfirm(null)} onConfirm={() => void handleRemoveConfirm()} /></>;
+  return <><div className="page-toolbar"><div><p className="muted">{loading ? "讀取中…" : (liveQuery ? `找到 ${filteredItems.length} 筆 / 共 ${transactions.length} 筆` : `共 ${transactions.length} 筆紀錄`)}</p><h3>2026 年 10 月</h3></div><div style={{display:"flex",gap:10,alignItems:"center"}}>{liveQuery ? <button className="secondary-button tiny" style={{padding:"0 14px",fontWeight:800}} onClick={clearSearch} title="清除搜尋">「{liveQuery}」 ✕</button> : null}<button className="secondary-button" onClick={openSearch} title="搜尋收支"><Search size={17}/>搜尋</button><button className="primary-button" onClick={() => setShowForm(true)}><Plus size={17}/>新增</button></div></div><div className="filter-row"><button className={filter === "all" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("all")}>全部</button><button className={filter === "in" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("in")}>收入</button><button className={filter === "out" ? "filter-chip selected" : "filter-chip"} onClick={() => setFilter("out")}>支出</button></div><div className="transaction-list full-list" onClick={closeMenu}>{filteredItems.length ? filteredItems.map((item) => {
+  const titleMatches = paymentItems.filter((p) => (p.title && item.title.includes(p.title)));
+  const usedItems = titleMatches.length ? titleMatches : paymentItems;
+  const pendingNos = usedItems.length
+    ? Array.from(new Set(usedItems.flatMap((p) => students.filter((s) => !getStudentPaymentPaid(s, p.id)).map((s) => String(s.no).trim()).filter(Boolean))))
+        .sort((a, b) => a.localeCompare(b, "zh-Hant", { numeric: true }))
+        .join("、")
+    : "";
+  return <TransactionRow key={item.id} item={item} onOpenImages={(imgs, t) => imgs.length && setPreview({ title: t, images: imgs, index: 0 })} onMenu={(tx, anchor) => openMenu(tx, anchor)} seats={pendingNos} />;
+}) : <div className="empty-state"><ReceiptText size={30}/><strong>{liveQuery ? "沒有符合的結果" : "目前尚無收支紀錄"}</strong><span>{liveQuery ? "請更換關鍵字或清除搜尋。" : "新增第一筆資料後會自動保存。"}</span></div>}</div>{searchModal && <div className="modal-backdrop" onClick={() => { setSearchQuery(liveQuery); setSearchModal(false); }}><div className="modal" style={{maxWidth:460}} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{display:"flex",gap:10,alignItems:"flex-start",flex:1}}><span style={{width:42,height:42,borderRadius:12,background:"#e2f0e9",color:"var(--teal)",display:"grid",placeItems:"center",flex:"0 0 auto"}}><Search size={19}/></span><div style={{flex:1}}><h3 style={{margin:"2px 0 4px",fontSize:19,letterSpacing:"-.02em"}}>搜尋收支</h3><p style={{margin:0,color:"var(--muted)",fontSize:13,lineHeight:1.5}}>輸入關鍵字查找項目名稱、類型（收入/支出）或金額，按下「套用」立即顯示結果。</p></div></div><button onClick={() => { setSearchQuery(liveQuery); setSearchModal(false); }} aria-label="關閉"><X size={18}/></button></div><label>關鍵字<input autoFocus placeholder="例如：班費、支出、500" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") applySearch(); if (event.key === "Escape") { setSearchQuery(liveQuery); setSearchModal(false); } }} /></label><div style={{display:"flex",gap:10,marginTop:6}}><button className="secondary-button wide" onClick={clearSearch}>清除</button><button className="primary-button wide" onClick={applySearch}>套用</button></div></div></div>}{menuState && <><div className="popover-backdrop" onClick={closeMenu} style={{position:"fixed",inset:0,zIndex:15}}/><div className="popover-menu" style={{position:"fixed",top:menuState.top,left:menuState.left,zIndex:16,minWidth:164,background:"#fff",border:"1px solid var(--line)",borderRadius:14,padding:6,boxShadow:"0 10px 26px rgba(20,60,40,.14)"}}><button className="popover-item" onClick={() => handleEditOpen(menuState.item)} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--ink)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#f2f7f4")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Pencil size={15}/> 編輯</button><button className="popover-item danger" onClick={() => { setRemoveConfirm({ tx: menuState.item }); setMenuState(null); }} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 10px",borderRadius:10,fontSize:14,fontWeight:800,background:"transparent",color:"var(--coral)"}} onMouseOver={(e) => (e.currentTarget.style.background = "#fef1ed")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}><Trash2 size={15}/> 刪除</button></div></>}{showForm && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>新增收支</h3><button onClick={() => { resetForm(); setShowForm(false); }}><X size={18}/></button></div><label>類型<select value={kind} onChange={(event) => setKind(event.target.value as TransactionKind)}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={amount} onChange={(event) => setAmount(event.target.value)} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "add")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:imageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={imageBusy} onChange={(event) => void handleImageFiles(event.target.files, "add")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void saveTransaction()}>儲存</button></div></div>}{editTx && <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h3>編輯收支</h3><button onClick={() => setEditTx(null)}><X size={18}/></button></div><label>類型<select value={editTx.kind} onChange={(event) => setEditTx({ ...editTx, kind: event.target.value as TransactionKind })}><option value="in">收入</option><option value="out">支出</option></select></label><label>項目名稱<input list={titleListId} value={editTx.title} onChange={(event) => setEditTx({ ...editTx, title: event.target.value })} placeholder="例如：11月班費收取" /><datalist id={titleListId}>{titleHistory.map((t) => <option key={t} value={t} />)}</datalist></label><label>金額<input value={editTx.amount} onChange={(event) => setEditTx({ ...editTx, amount: event.target.value })} type="number" placeholder="0" /></label><label style={{marginBottom:14}}>附件圖片 <span className="muted" style={{fontWeight:500,fontSize:12,marginLeft:6}}>（最多 {TX_IMG_MAX} 張）</span><div style={{marginTop:8,display:"flex",gap:10,flexWrap:"wrap",alignItems:"stretch"}}>{editTx.images.map((src, i) => <div key={i} className="tx-edit-image" style={{position:"relative",width:88,height:88,borderRadius:12,overflow:"hidden",border:"1px solid #e5ece8",background:"#fbfdfb"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} /><button type="button" onClick={() => removeImageAt(i, "edit")} aria-label="移除圖片" style={{position:"absolute",top:3,right:3,width:26,height:26,borderRadius:"50%",background:"rgba(231,120,98,.95)",color:"#fff",display:"grid",placeItems:"center",boxShadow:"0 4px 10px rgba(0,0,0,.12)"}}><X size={13}/></button></div>)}{editTx.images.length < TX_IMG_MAX && <><label className="tx-add-image" title="從裝置選擇圖片" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><ImageIcon size={18}/><span>上傳</span><input type="file" accept="image/*" multiple hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label><label className="tx-add-image" title="開啟相機拍照" style={{width:88,height:88,borderRadius:12,border:"1px dashed #bccfc6",background:"#f6faf8",cursor:editImageBusy ? "wait" : "pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,color:"#78908a",fontSize:12,fontWeight:800}}><Camera size={18}/><span>拍照</span><input type="file" accept="image/*" capture="environment" hidden disabled={editImageBusy} onChange={(event) => void handleImageFiles(event.target.files, "edit")} /></label></>}</div></label><button className="primary-button wide" onClick={() => void handleEditSave()}>儲存變更</button></div></div>}{preview && <div className="modal-backdrop" onClick={() => setPreview(null)}><div className="modal tx-preview" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h3 style={{fontSize:16}}>{preview.title}</h3><div style={{display:"flex",alignItems:"center",gap:4}}><button className="icon-inline" aria-label="上一張" disabled={preview.index<=0} onClick={() => setPreview({...preview, index: Math.max(0, preview.index-1)})}><ChevronLeft size={18}/></button><span style={{fontSize:12,fontWeight:700,color:"#56736d",padding:"0 4px"}}>{preview.index + 1} / {preview.images.length}</span><button className="icon-inline" aria-label="下一張" disabled={preview.index>=preview.images.length-1} onClick={() => setPreview({...preview, index: Math.min(preview.images.length-1, preview.index+1)})}><ChevronRight size={18}/></button><button onClick={() => setPreview(null)} aria-label="關閉" style={{marginLeft:6}}><X size={18}/></button></div></div><div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",minHeight:220,margin:"6px 0 14px",background:"#f4f8f6",borderRadius:14,overflow:"hidden",padding:12}}><button className="icon-inline gallery-arrow gallery-prev" aria-label="上一張" disabled={preview.index<=0} onClick={() => setPreview({...preview, index: Math.max(0, preview.index-1)})}><ChevronLeft size={22}/></button><img src={preview.images[preview.index]} alt="" style={{width:"100%",maxHeight:"62vh",objectFit:"contain",display:"block",borderRadius:10,boxShadow:"0 10px 28px rgba(12,40,35,.14)"}} /><button className="icon-inline gallery-arrow gallery-next" aria-label="下一張" disabled={preview.index>=preview.images.length-1} onClick={() => setPreview({...preview, index: Math.min(preview.images.length-1, preview.index+1)})}><ChevronRight size={22}/></button></div><div style={{display:"flex",gap:8,overflowX:"auto",padding:"2px 0 4px"}}>{preview.images.map((src, i) => <button key={i} onClick={() => setPreview({ ...preview, index: i })} style={{flex:"0 0 auto",padding:2,borderRadius:12,border: i === preview.index ? "2px solid var(--teal)" : "2px solid transparent",background:"#fff"}}><img src={src} alt="" style={{width:56,height:56,objectFit:"cover",borderRadius:8,display:"block"}} /></button>)}</div></div></div>}<ConfirmDialog open={Boolean(removeConfirm)} title="確認刪除這筆收支？" message={"「" + (removeConfirm?.tx.title ?? "") + "」一經刪除，包含附件圖片在內無法復原。"} onCancel={() => setRemoveConfirm(null)} onConfirm={() => void handleRemoveConfirm()} /></>;
 }
 
 function StudentsPage() {
@@ -565,7 +592,7 @@ function StudentsPage() {
         </b>
       </div>
     </div>
-    <div className="section-row"><h3>繳費名單</h3><div className="row-actions"><button className="text-link" onClick={() => toast("名單匯出功能開發中")}>匯出名單 <ChevronRight size={15}/></button><button className="primary-button tiny" disabled={studentBusy} onClick={openAddStudent}><Plus size={14}/> 新增</button></div></div>
+    <div className="section-row"><h3>繳費名單</h3><div className="row-actions"><button className="primary-button tiny" disabled={studentBusy} onClick={openAddStudent}><Plus size={14}/> 新增</button></div></div>
     <div className="student-list">
       {loading ? (
         <div className="empty-state"><Users size={30}/><strong>讀取學生名單中…</strong></div>
@@ -735,7 +762,7 @@ function ReportsPage() {
 
 function SettingsPage() {
   const { settings, refresh: refreshData } = useClassData();
-  const { user, firebaseAuth } = useAuth();
+  const { user, firebaseAuth, isDemo } = useAuth();
   const [notify, setNotify] = useState(true);
   const [className, setClassName] = useState(String(settings.className ?? "701 班"));
   const [editingClassName, setEditingClassName] = useState(false);
@@ -916,6 +943,26 @@ function SettingsPage() {
     setAdmins(Object.entries(adminsMap).map(([uid, data]) => ({ uid, email: data.email ?? "", displayName: data.displayName, isCurrent: user?.uid === uid })));
   }, [settings, user]);
 
+  const adminsMapRuntime = (settings.admins ?? {}) as Record<string, { email?: string; displayName?: string }>;
+  const myDisplayName =
+    user?.uid ? (adminsMapRuntime[user.uid]?.displayName as string | undefined) ?? ((user as User | null)?.displayName as string | undefined) ?? undefined : undefined;
+  const rootAdminKeyword =
+    /則鈞爸爸|則鈞|zejun|zejyun|zejin|zejeng/i;
+  const isRootAdmin = isDemo ||
+    (user && (
+      rootAdminKeyword.test(String(user.email ?? "")) ||
+      rootAdminKeyword.test(String((user as User | null)?.displayName ?? "")) ||
+      (myDisplayName && rootAdminKeyword.test(myDisplayName))
+    )) ? true : false;
+
+  function isRootAdminRow(admin: { uid?: string; email?: string; displayName?: string | null }): boolean {
+    const email = String(admin.email ?? "").toLowerCase();
+    const disp = String(admin.displayName ?? "");
+    return rootAdminKeyword.test(email) || rootAdminKeyword.test(disp);
+  }
+
+  const visibleAdmins = isRootAdmin ? admins : admins.filter((a) => !isRootAdminRow(a));
+
   async function persistAdmins(nextAdmins: typeof admins) {
     const payload = nextAdmins.reduce<Record<string, { email: string; displayName?: string }>>((acc, item) => {
       acc[item.uid] = { email: item.email, displayName: item.displayName ?? undefined };
@@ -960,6 +1007,10 @@ function SettingsPage() {
       } else if (adminModal.mode === "edit" && adminModal.uid) {
         const existing = admins.find((a) => a.uid === adminModal.uid);
         if (!existing) throw new Error("找不到管理者");
+        if (!isRootAdmin && isRootAdminRow(existing)) {
+          toast.error("權限不足，僅最高管理者可進行此操作");
+          return;
+        }
         const target = (firebaseAuth.currentUser?.uid === existing.uid ? firebaseAuth.currentUser : null);
         if (target) {
           if (email !== existing.email) await updateEmail(target, email);
@@ -1002,6 +1053,10 @@ function SettingsPage() {
       toast.error("無法刪除目前登入的管理者帳號");
       return;
     }
+    if (!isRootAdmin && isRootAdminRow(admin)) {
+      toast.error("權限不足，僅最高管理者可進行此操作");
+      return;
+    }
     setRemoveAdminConfirm({ admin });
   }
 
@@ -1010,6 +1065,11 @@ function SettingsPage() {
     const admin = removeAdminConfirm.admin;
     if (!firebaseAuth || !firebaseReady) {
       toast.error("系統未連線");
+      return;
+    }
+    if (!isRootAdmin && isRootAdminRow(admin)) {
+      toast.error("權限不足，僅最高管理者可進行此操作");
+      setRemoveAdminConfirm(null);
       return;
     }
     setAdminBusy(true);
@@ -1109,14 +1169,15 @@ function SettingsPage() {
       <div className="setting-item stacked">
         <div className="stacked-head"><span>管理者帳號</span><button className="primary-button tiny" disabled={adminBusy} onClick={openAddAdmin}><Plus size={14}/> 新增</button></div>
         <div className="admin-list">
-          {admins.length ? admins.map((admin) => <div className="admin-row" key={admin.uid}>
+          {visibleAdmins.length ? visibleAdmins.map((admin) => <div className="admin-row" key={admin.uid}>
             <div className="admin-meta">
-              <strong>{admin.isCurrent ? ((user as User | null)?.displayName ?? admin.displayName) : (admin.displayName || "未命名管理者")}</strong>
+              <strong>{admin.isCurrent ? ((user as User | null)?.displayName ?? admin.displayName) : (admin.displayName || "未命名管理者")}{isRootAdminRow(admin) ? <span className="root-tag" style={{ marginLeft: 8, padding: "2px 8px", background: "#e6f5f3", color: "#247a72", borderRadius: 99, fontSize: 12, fontWeight: 700 }}>最高管理</span> : null}</strong>
               {!admin.isCurrent && <span>{admin.email}</span>}
+              {admin.isCurrent && <span>目前登入中</span>}
             </div>
             <div className="admin-actions">
-              <button className="icon-inline" aria-label="編輯" disabled={adminBusy} onClick={() => openEditAdmin(admin)}><Pencil size={15}/></button>
-              <button className="icon-inline danger" aria-label="刪除" disabled={adminBusy || admin.isCurrent} onClick={() => void removeAdmin(admin)}><Trash2 size={15}/></button>
+              <button className="icon-inline" aria-label="編輯" disabled={adminBusy || (!isRootAdmin && isRootAdminRow(admin))} onClick={() => openEditAdmin(admin)}><Pencil size={15}/></button>
+              {!isRootAdminRow(admin) && !admin.isCurrent && <button className="icon-inline danger" aria-label="刪除" disabled={adminBusy} onClick={() => void removeAdmin(admin)}><Trash2 size={15}/></button>}
             </div>
           </div>) : <div className="empty-inline">尚無管理者，請先新增</div>}
         </div>
@@ -1145,66 +1206,233 @@ export default function Home() {
   const [shareUrl, setShareUrl] = useState("");
 
   function buildPublicBundle(): string {
-    const safeTx = transactions.map((t) => ({
-      id: t.id,
-      title: t.title,
-      amount: t.amount,
-      type: t.type,
-      meta: t.meta,
-      createdAt: t.createdAt,
-    }));
-    const safePayments = paymentItems.map((p) => ({
-      id: p.id,
-      title: p.title,
-      amount: p.amount,
-      paidCount: students.filter((s) => getStudentPaymentPaid(s, p.id)).length,
-      studentCount: students.length,
-    }));
+    const txSorted = [...transactions].sort((a, b) => (Number(b.createdAt || 0) - Number(a.createdAt || 0)) || 0);
+    const recentIds = new Set(txSorted.slice(0, 3).map((t) => String(t.id)));
+    const safeTx = transactions.map((t) => {
+      const isRecent = recentIds.has(String(t.id));
+      const imgs = isRecent ? (getTransactionImages(t.id) || []) : [];
+      return {
+        n: String(t.title || "").slice(0, 80),
+        a: Math.round(Number(t.amount || 0)),
+        k: String(t.type) === "in" ? 0 : 1,
+        i: Array.isArray(imgs) ? imgs.slice(0, 4) : [],
+      };
+    });
+    const safePayments = paymentItems.map((p) => {
+      const paidCount = students.filter((s) => getStudentPaymentPaid(s, p.id)).length;
+      const unpaidSeats = students
+        .filter((s) => !getStudentPaymentPaid(s, p.id))
+        .slice()
+        .sort((a, b) => String(a.no).localeCompare(String(b.no), "zh-Hant", { numeric: true }))
+        .map((s) => String(s.no).trim())
+        .filter(Boolean)
+        .join("、");
+      return {
+        n: String(p.title || "").slice(0, 60),
+        a: Math.round(Number(p.amount || 0)),
+        pc: paidCount,
+        sc: students.length,
+        u: unpaidSeats,
+      };
+    });
     const bundle = {
-      v: 1,
-      className: settings.className ?? "701 班",
-      yearLabel: "2026 學年度",
-      generatedAt: new Date().toISOString(),
-      summary: {
-        balance: income - expense,
-        income,
-        expense,
-        incomeCount: transactions.filter((t) => t.type === "in").length,
-        expenseCount: transactions.filter((t) => t.type === "out").length,
-        txCount: transactions.length,
-        studentCount: students.length,
+      v: 2,
+      c: String(settings.className ?? "701 班").slice(0, 40),
+      y: "2026 學年度",
+      g: Date.now(),
+      s: {
+        b: Math.round(income - expense),
+        i: Math.round(income),
+        e: Math.round(expense),
+        ic: transactions.filter((t) => String(t.type) === "in").length,
+        ec: transactions.filter((t) => String(t.type) === "out").length,
       },
-      monthly: buildMonthlyTotals(transactions),
-      payments: safePayments,
-      transactions: safeTx,
+      p: safePayments,
+      t: safeTx,
     };
     try {
       const json = JSON.stringify(bundle);
       const bytes = new TextEncoder().encode(json);
-      let binary = "";
-      bytes.forEach((b) => { binary += String.fromCharCode(b); });
-      const b64 = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-      return b64;
+      const compressed = typeof CompressionStream !== "undefined"
+        ? (() => {
+            try {
+              const cs = new CompressionStream("deflate-raw");
+              const writer = cs.writable.getWriter();
+              const reader = cs.readable.getReader();
+              writer.write(bytes);
+              writer.close();
+              const chunks: Uint8Array[] = [];
+              return reader.read().then(function pump(result): Promise<Uint8Array> {
+                if (result.done) {
+                  const total = chunks.reduce((sum, c) => sum + c.length, 0);
+                  const out = new Uint8Array(total);
+                  let off = 0;
+                  chunks.forEach((c) => { out.set(c, off); off += c.length; });
+                  return Promise.resolve(out);
+                }
+                chunks.push(result.value);
+                return reader.read().then(pump);
+              });
+            } catch {
+              return Promise.resolve(bytes);
+            }
+          })()
+        : Promise.resolve(bytes);
+      return "";
     } catch (_err) {
       return "";
     }
   }
+  const [pendingShareB64, setPendingShareB64] = useState<string | null>(null);
+  function bytesToUrlB64(buf: Uint8Array): string {
+    let binary = "";
+    buf.forEach((b) => { binary += String.fromCharCode(b); });
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  const lastShareBundleKey = useMemo(() => {
+    try {
+      return `${settings.className}|${income}|${expense}|${transactions.length}|${students.length}|${paymentItems.length}`;
+    } catch {
+      return "";
+    }
+  }, [settings.className, income, expense, transactions.length, students.length, paymentItems.length]);
+  function invalidateShareCacheIfNeeded() {
+    try {
+      const k = "class701_last_share_key";
+      const last = window.localStorage.getItem(k);
+      if (last !== lastShareBundleKey) {
+        window.localStorage.removeItem("class701_share_b64");
+        window.localStorage.setItem(k, lastShareBundleKey);
+      }
+    } catch { /* noop */ }
+  }
+  function getCachedShareB64(): string | null {
+    try {
+      invalidateShareCacheIfNeeded();
+      return window.localStorage.getItem("class701_share_b64");
+    } catch {
+      return null;
+    }
+  }
+  function cacheShareB64(v: string) {
+    try {
+      window.localStorage.setItem("class701_share_b64", v);
+    } catch { /* noop */ }
+  }
+  async function produceShareB64(): Promise<string> {
+    const cached = getCachedShareB64();
+    if (cached && typeof cached === "string" && cached.length > 10) return cached;
+    const json = JSON.stringify({
+      v: 2,
+      c: String(settings.className ?? "701 班").slice(0, 40),
+      y: "2026 學年度",
+      g: Date.now(),
+      s: {
+        b: Math.round(income - expense),
+        i: Math.round(income),
+        e: Math.round(expense),
+        ic: transactions.filter((t) => String(t.type) === "in").length,
+        ec: transactions.filter((t) => String(t.type) === "out").length,
+      },
+      p: (paymentItems.map((p) => {
+        const paidCount = students.filter((s) => getStudentPaymentPaid(s, p.id)).length;
+        const unpaidSeats = students
+          .filter((s) => !getStudentPaymentPaid(s, p.id))
+          .slice()
+          .sort((a, b) => String(a.no).localeCompare(String(b.no), "zh-Hant", { numeric: true }))
+          .map((s) => String(s.no).trim())
+          .filter(Boolean)
+          .join("、");
+        return {
+          n: String(p.title || "").slice(0, 60),
+          a: Math.round(Number(p.amount || 0)),
+          pc: paidCount,
+          sc: students.length,
+          u: unpaidSeats,
+        };
+      }) as unknown[]),
+      t: (() => {
+        const txSortedInner = [...transactions].sort((a, b) => (Number(b.createdAt || 0) - Number(a.createdAt || 0)) || 0);
+        return txSortedInner.map((t) => {
+          const imgs = getTransactionImages(t.id) || [];
+          return {
+            n: String(t.title || "").slice(0, 80),
+            a: Math.round(Number(t.amount || 0)),
+            k: String(t.type) === "in" ? 0 : 1,
+            i: Array.isArray(imgs) ? imgs.slice(0, 3) : [],
+          };
+        });
+      })(),
+    });
+    const bytes = new TextEncoder().encode(json);
+    let outBytes = bytes;
+    let flag = "j";
+    if (typeof CompressionStream !== "undefined") {
+      try {
+        const cs = new CompressionStream("deflate-raw");
+        const writer = cs.writable.getWriter();
+        writer.write(bytes);
+        writer.close();
+        const reader = cs.readable.getReader();
+        const chunks: Uint8Array[] = [];
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const result = await reader.read();
+          if (result.done) break;
+          chunks.push(result.value);
+        }
+        const total = chunks.reduce((sum, c) => sum + c.length, 0);
+        const merged = new Uint8Array(total);
+        let off = 0;
+        chunks.forEach((c) => { merged.set(c, off); off += c.length; });
+        if (merged.length < bytes.length - 32) {
+          outBytes = merged;
+          flag = "z";
+        }
+      } catch { /* fallback JSON raw */ }
+    }
+    const finalBytes = new Uint8Array(outBytes.length + 1);
+    finalBytes[0] = flag === "z" ? 0x7a : 0x6a;
+    finalBytes.set(outBytes, 1);
+    const b64 = bytesToUrlB64(finalBytes);
+    cacheShareB64(b64);
+    return b64;
+  }
   function buildShareUrl(): string {
-    const b64 = buildPublicBundle();
+    const b64 = pendingShareB64 || getCachedShareB64() || "";
     const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
     return `${base}open.html?d=${b64}`;
   }
+  async function openShareAsync() {
+    try {
+      setShareUrl("");
+      const b64 = await produceShareB64();
+      setPendingShareB64(b64);
+      const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
+      setShareUrl(`${base}open.html?d=${b64}`);
+      setShareModal(true);
+    } catch (_err) {
+      toast.error("分享連結建立失敗，請重試");
+      setShareModal(true);
+    }
+  }
   function openShare() {
-    setShareUrl(buildShareUrl());
-    setShareModal(true);
+    void openShareAsync();
   }
   const shortShareUrl = useMemo(() => {
     if (!shareUrl) return "";
-    if (shareUrl.length <= 60) return shareUrl;
-    return `${shareUrl.slice(0, 38)}…${shareUrl.slice(-14)}`;
+    if (shareUrl.length <= 140) return shareUrl;
+    const queryStart = shareUrl.indexOf("?d=");
+    if (queryStart >= 0) {
+      const prefix = shareUrl.slice(0, Math.min(queryStart + 3, 36));
+      const tail = shareUrl.slice(-12);
+      return `${prefix}${shareUrl.length > (prefix.length + tail.length + 1) ? "…" : ""}${tail}`;
+    }
+    return `${shareUrl.slice(0, 36)}…${shareUrl.slice(-12)}`;
   }, [shareUrl]);
   function copyShare() {
-    const link = shareUrl || buildShareUrl();
+    const link = (shareUrl && shareUrl.includes("?d=") && shareUrl.endsWith("準備中…") === false) ? shareUrl : buildShareUrl();
+    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
     const fallback = () => {
       const ta = document.createElement("textarea");
       ta.value = link;
@@ -1223,24 +1451,53 @@ export default function Home() {
     }
   }
   function openShareTab() {
-    const link = shareUrl || buildShareUrl();
+    const link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
+    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
     window.open(link, "_blank", "noopener");
   }
-  function shareToLine() {
-    const link = shareUrl || buildShareUrl();
+  async function shareToLineAsync() {
     const classNameRaw = String(settings.className ?? "701 班");
     const balanceRaw = income - expense;
     const message = `【${classNameRaw} 班費公開頁】
 結餘：$${balanceRaw.toLocaleString()}｜收入 $${income.toLocaleString()}｜支出 $${expense.toLocaleString()}
 點擊連結查看完整收支明細與繳費進度（唯讀免登入）：`;
-    const url = `https://line.me/R/msg/text/?${encodeURIComponent(message)}%0A${encodeURIComponent(link)}`;
+    let link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
+    if (!link || link.endsWith("?d=")) {
+      try {
+        const b64 = await produceShareB64();
+        setPendingShareB64(b64);
+        const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
+        link = `${base}open.html?d=${b64}`;
+        setShareUrl(link);
+      } catch { /* ignore */ }
+    }
+    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
+    const encoded = `${encodeURIComponent(message)}%0A${encodeURIComponent(link)}`;
+    // LINE 行動版會有 URL 長度限制，若超過 5000 則改用 copyShare + 提示
+    if (encoded.length > 5000) {
+      copyShare();
+      toast.info("連結較長，已自動複製；請在 LINE 聊天室貼上傳送");
+      return;
+    }
+    const url = `https://line.me/R/msg/text/?${encoded}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
+  function shareToLine() { void shareToLineAsync(); }
   async function nativeShare() {
-    const link = shareUrl || buildShareUrl();
+    let link = (shareUrl && shareUrl.includes("?d=") && !shareUrl.endsWith("準備中…")) ? shareUrl : buildShareUrl();
+    if (!link || link.endsWith("?d=")) {
+      try {
+        const b64 = await produceShareB64();
+        setPendingShareB64(b64);
+        const base = (typeof window !== "undefined" ? window.location.origin + window.location.pathname : "./").replace(/[^/]*$/, "");
+        link = `${base}open.html?d=${b64}`;
+        setShareUrl(link);
+      } catch { /* ignore */ }
+    }
     const classNameRaw = String(settings.className ?? "701 班");
     const balanceRaw = income - expense;
     if (!navigator.share) return;
+    if (!link || link.endsWith("?d=")) { toast.info("正在壓縮連結，請稍候再試"); return; }
     try {
       await navigator.share({
         title: `${classNameRaw} 班費公開頁`,
@@ -1255,7 +1512,7 @@ export default function Home() {
   const canNativeShare = useMemo(() => typeof navigator !== "undefined" && Boolean(navigator.share), []);
   return <>
     <Shell share={location === "/" ? { onOpen: openShare } : undefined}>{page}</Shell>
-    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享到 LINE / 社群</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shortShareUrl || "準備中…"} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", userSelect: "none", letterSpacing: "-.01em" }} onClick={copyShare} title="點擊即可複製完整連結" /></label><p style={{ margin: "4px 4px -6px", fontSize: 12, color: "var(--muted)" }}>顯示為縮寫版本；點擊輸入框或下方「複製連結」即可取得完整加密連結。</p><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}><button className="primary-button wide" style={{ background: "#06C755", boxShadow: "0 7px 14px rgba(6,199,85,.22)" }} onClick={shareToLine}><Share2 size={15} /> LINE 分享</button>{canNativeShare ? <button className="secondary-button wide" onClick={nativeShare}><Share2 size={15} /> 系統分享</button> : <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button>}<button className="secondary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button>{canNativeShare ? <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button> : null}</div></div></div>}
+    {shareModal && <div className="modal-backdrop" onClick={() => setShareModal(false)}><div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}><span style={{ width: 42, height: 42, borderRadius: 12, background: "#e2f0e9", color: "var(--teal)", display: "grid", placeItems: "center", flex: "0 0 auto" }}><Share2 size={19} /></span><div style={{ flex: 1 }}><h3 style={{ margin: "2px 0 4px", fontSize: 19, letterSpacing: "-.02em" }}>分享到 LINE / 社群</h3><p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>任何人拿到下方連結，可在不需登入的情況下「唯讀」查看班費結餘、收入、支出與收支明細；唯無法編輯或刪除任何資料。</p></div></div><button onClick={() => setShareModal(false)} aria-label="關閉"><X size={18} /></button></div><label>公開連結<input readOnly value={shortShareUrl || "正在壓縮分享連結…"} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", userSelect: "none", letterSpacing: "-.01em", color: shareUrl ? "var(--ink)" : "#8b9c98", fontStyle: shareUrl ? "normal" : "italic" }} onClick={copyShare} title="點擊即可複製完整連結" /></label><p style={{ margin: "4px 4px -6px", fontSize: 12, color: "var(--muted)" }}>顯示為省略版本；點擊輸入框或下方「複製連結」即可取得完整壓縮連結。LINE 若連結太長時會自動複製，請在聊天室手動貼上即可。</p><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}><button className="primary-button wide" style={{ background: "#06C755", boxShadow: "0 7px 14px rgba(6,199,85,.22)" }} onClick={shareToLine}><Share2 size={15} /> LINE 分享</button>{canNativeShare ? <button className="secondary-button wide" onClick={nativeShare}><Share2 size={15} /> 系統分享</button> : <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button>}<button className="secondary-button wide" onClick={copyShare}><Copy size={15} /> 複製連結</button>{canNativeShare ? <button className="secondary-button wide" onClick={openShareTab}><ExternalLink size={15} /> 預覽頁</button> : null}</div></div></div>}
     <InstallPrompt visible={install.visible} isIos={install.isIos} dismiss={install.dismiss} install={install.install} />
   </>;
 }

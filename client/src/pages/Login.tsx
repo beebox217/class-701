@@ -1,27 +1,75 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Smartphone } from "lucide-react";
 import { useAuth, demoCredentials, firebaseReady } from "@/contexts/AuthContext";
 import { useClassData } from "@/contexts/ClassDataContext";
 
+const REMEMBER_STATE_KEY = "class701_remember_enabled";
+
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, getRememberedCredentials, user, loading: authLoading } = useAuth();
   const { settings } = useClassData();
   const className = String(settings.className ?? "701 班");
-  const [email, setEmail] = useState(firebaseReady ? "" : demoCredentials.email);
-  const [password, setPassword] = useState(firebaseReady ? "" : demoCredentials.password);
+
+  function initialRemember(): boolean {
+    try {
+      return localStorage.getItem(REMEMBER_STATE_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  }
+  function initialCredentials(): { email: string; password: string } {
+    if (!firebaseReady) return { email: demoCredentials.email, password: demoCredentials.password };
+    const stored = getRememberedCredentials();
+    if (stored) return stored;
+    return { email: "", password: "" };
+  }
+  const initCreds = initialCredentials();
+  const [email, setEmail] = useState(initCreds.email);
+  const [password, setPassword] = useState(initCreds.password);
+  const [remember, setRemember] = useState(initialRemember());
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const autoAttemptRef = useRef(false);
 
   useEffect(() => {
     if (typeof document !== "undefined") document.title = `班費管理`;
   }, [className]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(REMEMBER_STATE_KEY, remember ? "1" : "0");
+    } catch {
+    }
+  }, [remember]);
+
+  useEffect(() => {
+    if (autoAttemptRef.current) return;
+    if (authLoading) return;
+    if (user) return;
+    const remembered = getRememberedCredentials();
+    if (!remembered) return;
+    autoAttemptRef.current = true;
+    setBusy(true);
+    (async () => {
+      try {
+        await signIn(remembered.email, remembered.password, true);
+        toast.success("已自動登入，歡迎回到班費管理");
+      } catch (error) {
+        try { localStorage.removeItem("class701_remember_creds"); } catch {}
+        toast.error(error instanceof Error ? error.message : "自動登入失敗，請手動重新輸入");
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [authLoading, user, signIn, getRememberedCredentials]);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     try {
-      await signIn(email, password);
+      await signIn(email, password, remember);
       toast.success(`登入成功，歡迎回到班費管理`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "登入失敗，請檢查帳號密碼");
@@ -37,8 +85,8 @@ export default function Login() {
       <div className="login-intro"><span className="login-kicker"><LockKeyhole size={13}/> 管理者登入</span><p>登入後即可管理班級收支、繳費名單與學期報表。</p></div>
       <form className="login-form" onSubmit={handleSubmit}>
         <label>電子信箱<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="teacher@mingde.edu.tw" autoComplete="email" required /></label>
-        <label>登入密碼<div className="password-field"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="請輸入密碼" autoComplete="current-password" required /><button type="button" aria-label="顯示密碼" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div></label>
-        <div className="login-options"><label className="remember"><input type="checkbox" defaultChecked /> <span>記住此裝置</span></label><button type="button" onClick={() => toast("請聯絡班級管理者重設密碼")}>忘記密碼？</button></div>
+        <label>登入密碼<div className="password-field"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="請輸入密碼" autoComplete={remember ? "current-password" : "off"} required /><button type="button" aria-label="顯示密碼" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div></label>
+        <div className="login-options"><label className="remember"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> <span>記住此裝置（下次自動登入）</span></label><button type="button" onClick={() => toast("請聯絡班級管理者重設密碼")}>忘記密碼？</button></div>
         <button className="login-submit" disabled={busy}>{busy ? "登入中…" : <>登入系統 <ArrowRight size={17}/></>}</button>
       </form>
       {!firebaseReady && <div className="demo-login"><strong>示範模式</strong><span>已預填測試帳號：teacher@mingde.edu.tw</span><small>密碼：701demo</small></div>}
