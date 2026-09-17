@@ -8,7 +8,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
+      react: path.resolve(import.meta.dirname, "node_modules", "react"),
+      "react-dom": path.resolve(import.meta.dirname, "node_modules", "react-dom"),
+      "react-dom/client": path.resolve(import.meta.dirname, "node_modules", "react-dom", "client.js"),
     },
+    dedupe: ["react", "react-dom", "react-dom/client"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-dom/client", "next-themes", "sonner"],
   },
   envDir: path.resolve(import.meta.dirname),
   root: path.resolve(import.meta.dirname, "client"),
@@ -22,11 +29,11 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
     allowedHosts: true,
-    hmr: {
-      host: "",
-      clientPort: 443,
-      protocol: "wss",
-      overlay: true,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      "Surrogate-Control": "no-store",
+      "Pragma": "no-cache",
+      "Expires": "0",
     },
   },
 });
