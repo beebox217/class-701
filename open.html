@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <meta name="theme-color" content="#247a72" />
-    <title>班費公開頁 · 701 班費管理</title>
-    <meta name="description" content="701 班費公開頁：結餘、收支明細與繳費進度一次看。" />
-    <meta property="og:title" content="班費公開頁 · 701 班費管理" />
+    <title>班費公開頁 · 班費管理</title>
+    <meta name="description" content="班費公開頁：結餘、收支明細與繳費進度一次看。" />
+    <meta property="og:title" content="班費公開頁 · 班費管理" />
     <meta property="og:description" content="班費結餘、收支明細與繳費進度，免登入即可查看。" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="./pwa-icon.svg" />
@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <script>
-      function classLogo(w,h){var w = w||28,h = h||28,s = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="40" stroke-linejoin="round" stroke-linecap="round"><path d="M138 120c0-18 15-33 33-33h86v324h-86c-18 0-33-15-33-33V120z"/><path d="M374 120c0-18-15-33-33-33h-86v324h86c18 0 33-15 33-33V120z"/><path d="M255 104c22 8 22 312 0 320"/></svg>`;return s;}
+      function classLogo(w,h){var w = w||28,h = h||28,s = `<img src="./pwa-icon.svg" alt="LOGO" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:inherit"/>`;return s;}
     </script>
     <style>
       :root {
@@ -141,7 +141,7 @@
             root.innerHTML = `
               <div class="public-top" style="margin-top:6px">
                 <div class="brand-mark">${classLogo(26,26)}</div>
-                <div class="brand-copy"><p class="eyebrow">MINGDE JUNIOR HIGH</p><h1>班費公開頁</h1></div>
+                <div class="brand-copy"><p class="eyebrow">CLASS FUND SYSTEM</p><h1>班費公開頁</h1></div>
               </div>
               <section class="welcome-card"><div><span class="soft-label">${sparkles()} 無法讀取分享資料</span><h3>連結已失效或格式錯誤</h3></div></section>
               ${renderEmpty("目前沒有可顯示的資料", "請由系統內重新建立分享連結後再開啟。")}`;
@@ -182,7 +182,7 @@
           root.innerHTML = `
             <div class="public-top">
               <div class="brand-mark">${classLogo(26,26)}</div>
-              <div class="brand-copy"><p class="eyebrow">MINGDE JUNIOR HIGH</p><h1>${data.className || "701 班"} 班費管理</h1></div>
+              <div class="brand-copy"><p class="eyebrow">CLASS FUND SYSTEM</p><h1>${data.className || "701 班"} 班費管理</h1></div>
             </div>
             <p class="eyebrow" style="margin:4px 4px 0;color:#708681;font-weight:800;font-size:12.5px;letter-spacing:.14em">${data.yearLabel || "2026 學年度"} · ${data.className || "701 班"} · <span style="color:var(--teal)">公開唯讀</span></p>
             <section class="welcome-card"><div><span class="soft-label">${sparkles()} 班費摘要</span><h3>班費公開頁面</h3></div></section>
