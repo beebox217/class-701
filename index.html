@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#2E7D32" />
+  <meta name="theme-color" content="#28837a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="班費管理" />
   <title>班費管理系統</title>
 
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg" />
-  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="./pwa-icon.svg" />
+  <link rel="apple-touch-icon" href="./pwa-icon.svg" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./css/styles.css" />
@@ -59,23 +59,32 @@
       'more-horizontal': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
       'edit-3': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
       save: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
-      'trash-2': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
+      'trash-2': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y1="17"/><line x1="14" x2="14" y1="11" y1="17"/></svg>',
       'alert-triangle': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
       'wifi-off': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-3.28-2.029"/><path d="M2 8.82a15 15 0 0 1 4.17-2.619"/><path d="M22 8.82a15 15 0 0 0-11.281-3.818"/><line x1="2" x2="22" y1="2" y2="22"/></svg>',
       'check-circle': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>',
       'x-circle-alt': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>',
       'alert-circle': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>',
       'info-circle': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
-      'more-horizontal-alt': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>'
+      'more-horizontal-alt': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+      lock: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+      eye: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+      'eye-off': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>',
+      settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+      cog: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 20.66-1-1.73"/><path d="M7 3.34 8 5.07"/><path d="m20.66 17-1.73-1"/><path d="M3.34 7 5.07 8"/><path d="M22 12h-2"/><path d="M2 12h2"/><path d="m20.66 7-1.73 1"/><path d="M3.34 17 5.07 16"/><path d="m17 3.34-1 1.73"/><path d="M7 20.66 8 18.93"/></svg>',
+      'user-plus': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>',
+      'graduation-cap': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
+      'list-plus': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>',
+      'refresh-cw': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>'
     };
   </script>
 </head>
-<body class="bg-[#F5F7F4] text-gray-800 min-h-screen flex flex-col">
+<body class="bg-[#F6FAF9] text-gray-800 min-h-screen flex flex-col">
 
-  <header id="app-header" class="sticky top-0 z-40 bg-[#2E7D32] text-white shadow-md flex-shrink-0">
+  <header id="app-header" class="sticky top-0 z-40 bg-[#28837a] text-white shadow-md flex-shrink-0">
     <div class="px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <i data-lucide="wallet" class="w-6 h-6 text-[#FFF59D]"></i>
+        <img src="./pwa-icon.svg" alt="LOGO" class="w-7 h-7 rounded-lg shadow-sm" />
         <h1 class="text-lg font-bold tracking-wide">班費管理系統</h1>
       </div>
       <div class="flex items-center gap-3">
@@ -83,12 +92,9 @@
         <button id="btn-login-header" class="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition">
           <i data-lucide="log-in" class="w-5 h-5"></i>
         </button>
-        <button id="btn-menu" class="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition md:hidden">
-          <i data-lucide="menu" class="w-5 h-5"></i>
-        </button>
       </div>
     </div>
-    <div id="header-subtitle" class="px-4 pb-2 text-xs text-white/80 flex items-center justify-between">
+    <div id="header-subtitle" class="hidden px-4 pb-2 text-xs text-white/80 flex items-center justify-between">
       <span id="header-class-name">—</span>
       <span id="header-balance-short">餘額：—</span>
     </div>
@@ -96,21 +102,85 @@
 
   <main id="app-main" class="flex-1 overflow-y-auto pb-24 px-4 pt-4 max-w-2xl mx-auto w-full">
 
-    <section id="page-overview" class="page-section">
-      <div class="grid grid-cols-3 gap-3 mb-4">
-        <div class="bg-white rounded-xl p-3 shadow-sm border border-green-100 text-center">
-          <p class="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
-            <i data-lucide="piggy-bank" class="w-3.5 h-3.5 text-[#2E7D32]"></i>目前餘額
-          </p>
-          <p id="stat-balance" class="text-lg font-bold text-[#2E7D32]">—</p>
+    <section id="page-login" class="page-section py-6">
+      <div class="flex flex-col items-center justify-center min-h-[70vh]">
+        <div class="w-32 h-32 mb-5 flex items-center justify-center">
+          <img src="./pwa-icon.svg" alt="班費管理系統 LOGO" class="w-full h-full rounded-3xl shadow-xl" />
         </div>
-        <div class="bg-white rounded-xl p-3 shadow-sm border border-green-100 text-center">
+        <h2 class="text-2xl font-bold text-[#28837a] mb-1">班費管理系統</h2>
+        <p class="text-sm text-gray-500 mb-7">Class Fee Management</p>
+
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-md border border-[#e8f2f0] overflow-hidden">
+          <div class="grid grid-cols-2 bg-[#F6FAF9] border-b border-gray-100">
+            <button id="login-tab-login" class="py-3 text-sm font-semibold text-[#28837a] border-b-2 border-[#28837a] transition">
+              登入
+            </button>
+            <button id="login-tab-register" class="py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 transition">
+              註冊
+            </button>
+          </div>
+
+          <div id="register-name-wrap" class="hidden px-5 pt-5">
+            <label class="text-xs text-gray-600 font-medium mb-1 block">暱稱 <span class="text-gray-400">(選填)</span></label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input id="login-displayname" type="text" placeholder="您的姓名"
+                class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
+            </div>
+          </div>
+
+          <div id="login-with-email-form" class="p-5 space-y-3">
+            <div>
+              <label class="text-xs text-gray-600 font-medium mb-1 block">Email</label>
+              <div class="relative">
+                <i data-lucide="mail" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input id="login-email" type="email" placeholder="your@email.com"
+                  class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs text-gray-600 font-medium mb-1 block">密碼</label>
+              <div class="relative">
+                <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input id="login-password" type="password" placeholder="至少 6 碼"
+                  class="w-full pl-9 pr-10 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
+                <button id="btn-toggle-password" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-gray-100">
+                  <i data-lucide="eye" class="w-4 h-4 text-gray-400"></i>
+                </button>
+              </div>
+            </div>
+
+            <button id="btn-primary-auth" class="w-full py-3 rounded-lg bg-[#28837a] text-white text-sm font-semibold hover:bg-[#236f67] active:bg-[#1e5e58] transition shadow-sm mt-2">
+              登入
+            </button>
+
+            <p id="login-form-hint" class="text-[11px] text-gray-400 leading-relaxed text-center pt-1">
+              首次使用請切換至「註冊」建立帳號
+            </p>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-gray-400 mt-6 text-center leading-relaxed max-w-xs">
+          系統僅供班級內部使用，登入資訊由管理者發布。
+        </p>
+      </div>
+    </section>
+
+    <section id="page-overview" class="page-section hidden">
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-[#e8f2f0] text-center">
+          <p class="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
+            <i data-lucide="piggy-bank" class="w-3.5 h-3.5 text-[#28837a]"></i>目前餘額
+          </p>
+          <p id="stat-balance" class="text-lg font-bold text-[#28837a]">—</p>
+        </div>
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-[#e8f2f0] text-center">
           <p class="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
             <i data-lucide="trending-up" class="w-3.5 h-3.5 text-green-600"></i>總收入
           </p>
           <p id="stat-income" class="text-lg font-bold text-green-600">—</p>
         </div>
-        <div class="bg-white rounded-xl p-3 shadow-sm border border-green-100 text-center">
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-[#e8f2f0] text-center">
           <p class="text-xs text-gray-500 mb-1 flex items-center justify-center gap-1">
             <i data-lucide="trending-down" class="w-3.5 h-3.5 text-red-500"></i>總支出
           </p>
@@ -118,9 +188,9 @@
         </div>
       </div>
 
-      <div class="bg-[#FFF59D]/40 border border-[#FFF59D] rounded-xl p-3 mb-4 flex items-start gap-3">
-        <i data-lucide="info" class="w-5 h-5 text-[#8D6E00] mt-0.5 flex-shrink-0"></i>
-        <div class="text-xs text-[#5D4B00] leading-relaxed">
+      <div class="bg-[#f6faf9] border border-[#dcecea] rounded-xl p-3 mb-4 flex items-start gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-[#28837a] mt-0.5 flex-shrink-0"></i>
+        <div class="text-xs text-[#1e5e58] leading-relaxed">
           <p class="font-semibold mb-1">系統說明</p>
           <p>本頁面提供班費收支總覽，管理員可新增/編輯/刪除紀錄，一般成員為唯讀模式。</p>
         </div>
@@ -128,9 +198,9 @@
 
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-base font-bold text-gray-700 flex items-center gap-2">
-          <i data-lucide="scroll-text" class="w-4 h-4 text-[#2E7D32]"></i>近期紀錄
+          <i data-lucide="scroll-text" class="w-4 h-4 text-[#28837a]"></i>近期紀錄
         </h2>
-        <button data-nav="records" class="text-xs text-[#2E7D32] font-medium flex items-center gap-1 hover:underline">
+        <button data-nav="records" class="text-xs text-[#28837a] font-medium flex items-center gap-1 hover:underline">
           查看全部 <i data-lucide="chevron-right" class="w-3 h-3"></i>
         </button>
       </div>
@@ -138,17 +208,20 @@
     </section>
 
     <section id="page-records" class="page-section hidden">
-      <div class="bg-white rounded-xl p-3 shadow-sm border border-green-100 mb-4">
+      <div class="bg-white rounded-xl p-3 shadow-sm border border-[#e8f2f0] mb-4">
+        <button id="btn-add-income-expense" class="hidden w-full mb-3 px-4 py-2.5 rounded-xl bg-[#28837a] text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#236f67] active:scale-[0.99] transition shadow-sm">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>收入與支出
+        </button>
         <div class="flex items-center gap-2 mb-3">
           <div class="relative flex-1">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             <input id="search-input" type="text" placeholder="搜尋分類、備註..."
-              class="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition" />
+              class="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
             <button id="search-clear" class="hidden absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100">
               <i data-lucide="x-circle" class="w-4 h-4 text-gray-400"></i>
             </button>
           </div>
-          <select id="filter-type" class="px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#2E7D32] outline-none bg-white">
+          <select id="filter-type" class="px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-[#28837a] outline-none bg-white">
             <option value="all">全部</option>
             <option value="income">收入</option>
             <option value="expense">支出</option>
@@ -167,128 +240,116 @@
       </div>
     </section>
 
-    <section id="page-profile" class="page-section hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-green-100 overflow-hidden mb-4">
-        <div class="bg-[#2E7D32] text-white p-4">
+    <section id="page-settings" class="page-section hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-[#e8f2f0] overflow-hidden mb-4">
+        <div class="bg-[#28837a] text-white p-4">
           <div class="flex items-center gap-3">
-            <div id="avatar-wrap" class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center border-2 border-[#FFF59D]">
-              <i data-lucide="user" class="w-7 h-7 text-white"></i>
+            <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center border-2 border-[#f6faf9]">
+              <img src="./pwa-icon.svg" alt="LOGO" class="w-8 h-8 rounded-lg" />
             </div>
-            <div>
-              <p id="profile-name" class="font-bold text-lg">未登入</p>
-              <p id="profile-role" class="text-xs text-white/80">訪客模式</p>
+            <div class="flex-1">
+              <p id="settings-my-name" class="font-bold text-lg">未登入</p>
+              <p id="settings-my-email" class="text-xs text-white/80">—</p>
             </div>
+            <span id="settings-my-role" class="badge">訪客</span>
           </div>
         </div>
-        <div class="p-4 space-y-3 text-sm">
-          <div class="flex items-center justify-between py-2 border-b border-gray-100">
-            <span class="text-gray-500 flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4"></i>帳號</span>
-            <span id="profile-email" class="text-gray-700">—</span>
+        <div class="p-4 space-y-3">
+          <div>
+            <label class="text-xs text-gray-600 font-medium mb-1 block flex items-center gap-1">
+              <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-[#28837a]"></i>班級名稱
+            </label>
+            <div class="flex gap-2">
+              <input id="settings-class-name" type="text" placeholder="例如：三年二班"
+                class="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
+              <button id="btn-save-class" class="px-4 rounded-lg bg-[#28837a] text-white text-sm font-medium flex items-center gap-1 hover:bg-[#236f67] transition">
+                <i data-lucide="save" class="w-4 h-4"></i>儲存
+              </button>
+            </div>
           </div>
-          <div class="flex items-center justify-between py-2 border-b border-gray-100">
-            <span class="text-gray-500 flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i>權限等級</span>
-            <span id="profile-role-detail" class="text-[#2E7D32] font-medium">訪客</span>
-          </div>
-          <div class="flex items-center justify-between py-2">
-            <span class="text-gray-500 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i>登入時間</span>
-            <span id="profile-login-time" class="text-gray-700">—</span>
-          </div>
+          <button id="btn-logout-settings" class="hidden w-full py-2.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>登出帳號
+          </button>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-green-100 p-4">
-        <p class="text-xs text-gray-500 mb-3 font-semibold uppercase tracking-wider">帳號操作</p>
-        <div class="space-y-2">
-          <button id="btn-login-page" class="w-full py-2.5 rounded-lg bg-[#2E7D32] text-white text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#256528] active:bg-[#1B5E20] transition">
-            <i data-lucide="log-in" class="w-4 h-4"></i>登入 / 切換帳號
-          </button>
-          <button id="btn-logout" class="hidden w-full py-2.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-200 transition">
-            <i data-lucide="log-out" class="w-4 h-4"></i>登出
+      <div class="bg-white rounded-xl shadow-sm border border-[#e8f2f0] p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-[#28837a]"></i>全部同學資料
+          </h3>
+          <button id="btn-add-student" class="px-3 py-1.5 rounded-lg bg-[#f6faf9] border border-[#dcecea] text-[#28837a] text-xs font-medium flex items-center gap-1 hover:bg-[#e8f2f0] transition">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>新增
           </button>
         </div>
+        <div id="students-list" class="space-y-2"></div>
+        <div id="students-empty" class="py-10 text-center text-gray-400 text-xs">尚未建立同學名單</div>
+        <div class="mt-3 flex justify-end">
+          <button id="btn-save-students" class="px-4 py-2 rounded-lg bg-[#28837a] text-white text-sm font-medium flex items-center gap-1 hover:bg-[#236f67] transition">
+            <i data-lucide="save" class="w-4 h-4"></i>儲存名單
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-[#e8f2f0] p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <i data-lucide="list-plus" class="w-4 h-4 text-[#28837a]"></i>收入與支出
+          </h3>
+          <button id="btn-add-fee-item" class="px-3 py-1.5 rounded-lg bg-[#f6faf9] border border-[#dcecea] text-[#28837a] text-xs font-medium flex items-center gap-1 hover:bg-[#e8f2f0] transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>新增
+          </button>
+        </div>
+        <div id="fee-items-list" class="space-y-2"></div>
+        <div id="fee-items-empty" class="py-10 text-center text-gray-400 text-xs hidden">尚未建立班費項目</div>
+        <div class="mt-3 flex justify-end">
+          <button id="btn-save-fee-items" class="px-4 py-2 rounded-lg bg-[#28837a] text-white text-sm font-medium flex items-center gap-1 hover:bg-[#236f67] transition">
+            <i data-lucide="save" class="w-4 h-4"></i>儲存項目
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-[#e8f2f0] p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4 text-[#28837a]"></i>使用者權限設定
+          </h3>
+          <button id="btn-refresh-users" class="px-3 py-1.5 rounded-lg bg-[#f6faf9] border border-[#dcecea] text-[#28837a] text-xs font-medium flex items-center gap-1 hover:bg-[#e8f2f0] transition">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>重新整理
+          </button>
+        </div>
+        <div id="users-roles-list" class="space-y-2"></div>
+        <div id="users-roles-empty" class="py-10 text-center text-gray-400 text-xs">尚未有任何已註冊的使用者</div>
       </div>
     </section>
 
   </main>
 
-  <footer id="app-footer" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex-shrink-0">
+  <footer id="app-footer" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex-shrink-0">
     <nav class="grid grid-cols-3 max-w-2xl mx-auto">
-      <button data-nav="overview" class="footer-nav active flex flex-col items-center py-2 text-xs text-gray-500 hover:text-[#2E7D32] transition">
+      <button data-nav="overview" class="footer-nav flex flex-col items-center py-2 text-xs text-gray-500 hover:text-[#28837a] transition">
         <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
         <span>總覽</span>
       </button>
-      <button data-nav="records" class="footer-nav flex flex-col items-center py-2 text-xs text-gray-500 hover:text-[#2E7D32] transition">
+      <button data-nav="records" class="footer-nav flex flex-col items-center py-2 text-xs text-gray-500 hover:text-[#28837a] transition">
         <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
         <span>明細</span>
       </button>
-      <button data-nav="profile" class="footer-nav flex flex-col items-center py-2 text-xs text-gray-500 hover:text-[#2E7D32] transition">
-        <i data-lucide="user-circle-2" class="w-5 h-5 mb-0.5"></i>
-        <span>我的</span>
+      <button data-nav="settings" class="footer-nav flex flex-col items-center py-2 text-xs text-gray-500 hover:text-[#28837a] transition">
+        <i data-lucide="settings" class="w-5 h-5 mb-0.5"></i>
+        <span>設定</span>
       </button>
     </nav>
-    <button id="fab-add" class="hidden absolute -top-6 right-5 w-12 h-12 rounded-full bg-[#FFF59D] border-2 border-[#2E7D32] text-[#2E7D32] shadow-lg flex items-center justify-center hover:bg-yellow-200 active:scale-95 transition">
-      <i data-lucide="plus" class="w-6 h-6"></i>
-    </button>
   </footer>
 
   <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 space-y-2 pointer-events-none"></div>
-
-  <div id="modal-login" class="modal-overlay hidden fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="modal-content bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-      <div class="p-5">
-        <div class="flex items-center justify-between mb-5">
-          <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <i data-lucide="log-in" class="w-5 h-5 text-[#2E7D32]"></i>登入
-          </h3>
-          <button class="modal-close p-2 rounded-full hover:bg-gray-100" data-modal="modal-login">
-            <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
-          </button>
-        </div>
-
-        <div id="login-with-email-form" class="space-y-3">
-          <div>
-            <label class="text-xs text-gray-600 font-medium mb-1 block">Email</label>
-            <input id="login-email" type="email" placeholder="your@email.com"
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition" />
-          </div>
-          <div>
-            <label class="text-xs text-gray-600 font-medium mb-1 block">密碼</label>
-            <input id="login-password" type="password" placeholder="至少 6 碼"
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition" />
-          </div>
-          <div class="flex gap-2">
-            <button id="btn-email-login" class="flex-1 py-2.5 rounded-lg bg-[#2E7D32] text-white text-sm font-medium hover:bg-[#256528] transition">登入</button>
-            <button id="btn-email-register" class="flex-1 py-2.5 rounded-lg bg-[#FFF59D] text-[#2E7D32] text-sm font-medium border border-[#2E7D32]/30 hover:bg-yellow-200 transition">註冊</button>
-          </div>
-        </div>
-
-        <div class="relative my-5">
-          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-          <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-gray-400">快速體驗</span></div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btn-demo-admin" class="py-2.5 rounded-lg border-2 border-[#2E7D32] text-[#2E7D32] text-xs font-medium hover:bg-green-50 transition flex items-center justify-center gap-1">
-            <i data-lucide="shield-check" class="w-4 h-4"></i>管理員模式
-          </button>
-          <button id="btn-demo-member" class="py-2.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 transition flex items-center justify-center gap-1">
-            <i data-lucide="user" class="w-4 h-4"></i>成員模式
-          </button>
-        </div>
-
-        <p class="text-[11px] text-gray-400 mt-5 leading-relaxed text-center">
-          正式使用前請先至 <span class="text-[#2E7D32]">js/firebase-config.js</span> 填入您的 Firebase 專案設定。
-        </p>
-      </div>
-    </div>
-  </div>
 
   <div id="modal-add-record" class="modal-overlay hidden fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="modal-content bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
       <div class="p-5">
         <div class="flex items-center justify-between mb-5">
           <h3 id="record-modal-title" class="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <i data-lucide="plus-circle" class="w-5 h-5 text-[#2E7D32]"></i>新增收支紀錄
+            <i data-lucide="plus-circle" class="w-5 h-5 text-[#28837a]"></i>新增收支紀錄
           </h3>
           <button class="modal-close p-2 rounded-full hover:bg-gray-100" data-modal="modal-add-record">
             <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
@@ -316,13 +377,13 @@
           <div>
             <label class="text-xs text-gray-600 font-medium mb-1 block">金額 (NT$)</label>
             <input id="record-amount" type="number" min="1" step="1" placeholder="例如：500" required
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-base font-semibold focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition" />
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-base font-semibold focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
           </div>
 
           <div>
             <label class="text-xs text-gray-600 font-medium mb-1 block">分類</label>
             <select id="record-category" required
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm bg-white focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition">
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm bg-white focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition">
               <option value="">請選擇分類</option>
               <optgroup label="收入">
                 <option value="班費收繳">班費收繳</option>
@@ -344,13 +405,13 @@
           <div>
             <label class="text-xs text-gray-600 font-medium mb-1 block">日期</label>
             <input id="record-date" type="date" required
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition" />
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition" />
           </div>
 
           <div>
             <label class="text-xs text-gray-600 font-medium mb-1 block">備註 <span class="text-gray-400">(選填)</span></label>
             <textarea id="record-note" rows="2" placeholder="例如：秋季出遊便當費"
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] outline-none transition resize-none"></textarea>
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-[#28837a] focus:ring-1 focus:ring-[#28837a] outline-none transition resize-none"></textarea>
           </div>
 
           <div class="flex gap-2 pt-2">
@@ -358,7 +419,7 @@
             <button id="record-delete-btn" type="button" class="hidden px-4 py-2.5 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-200 hover:bg-red-100 transition">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
-            <button type="submit" class="flex-1 py-2.5 rounded-lg bg-[#2E7D32] text-white text-sm font-medium hover:bg-[#256528] transition flex items-center justify-center gap-1">
+            <button type="submit" class="flex-1 py-2.5 rounded-lg bg-[#28837a] text-white text-sm font-medium hover:bg-[#236f67] transition flex items-center justify-center gap-1">
               <i data-lucide="save" class="w-4 h-4"></i>儲存
             </button>
           </div>
@@ -379,6 +440,55 @@
       <div class="flex gap-2">
         <button id="confirm-cancel" class="flex-1 py-2.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition">取消</button>
         <button id="confirm-ok" class="flex-1 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-profile" class="modal-overlay hidden fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="modal-content bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+      <div class="bg-[#28837a] text-white p-5 sm:rounded-t-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <i data-lucide="user-circle-2" class="w-5 h-5"></i>個人資訊
+          </h3>
+          <button class="modal-close p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition" data-modal="modal-profile">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center border-2 border-[#f6faf9] flex-shrink-0">
+            <img src="./pwa-icon.svg" alt="LOGO" class="w-8 h-8 rounded-lg" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p id="profile-my-name" class="font-bold text-lg truncate">未登入</p>
+            <p id="profile-my-email" class="text-xs text-white/80 truncate">—</p>
+          </div>
+          <span id="profile-my-role" class="badge flex-shrink-0">訪客</span>
+        </div>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl bg-[#f6faf9] p-3 border border-[#e8f2f0]">
+            <p class="text-[11px] text-gray-500 mb-1">角色</p>
+            <p id="profile-my-role-text" class="text-sm font-semibold text-[#28837a]">訪客</p>
+          </div>
+          <div class="rounded-xl bg-[#f6faf9] p-3 border border-[#e8f2f0]">
+            <p class="text-[11px] text-gray-500 mb-1">登入方式</p>
+            <p id="profile-my-provider" class="text-sm font-semibold text-[#28837a]">—</p>
+          </div>
+        </div>
+        <div class="rounded-xl bg-[#fbfdfd] p-3 border border-gray-100">
+          <p class="text-[11px] text-gray-500 mb-1">登入時間</p>
+          <p id="profile-my-login-at" class="text-sm text-gray-700">—</p>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="btn-profile-goto-settings" class="flex-1 py-2.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium flex items-center justify-center gap-1 hover:bg-gray-200 transition">
+            <i data-lucide="settings" class="w-4 h-4"></i>前往設定
+          </button>
+          <button id="btn-profile-logout" class="hidden flex-1 py-2.5 rounded-lg bg-[#28837a] text-white text-sm font-medium flex items-center justify-center gap-1 hover:bg-[#236f67] transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>登出帳號
+          </button>
+        </div>
       </div>
     </div>
   </div>

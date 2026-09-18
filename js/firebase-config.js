@@ -14,7 +14,7 @@
   const CLASS_INFO = {
     className: '三年二班',
     classId: 'class-701-1',
-    adminEmails: ['admin@example.com', 'leader@example.com']
+    adminEmails: ['istage.eason@gmail.com']
   };
 
   const isConfigured = () =>

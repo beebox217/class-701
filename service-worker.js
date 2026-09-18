@@ -1,5 +1,5 @@
-const CACHE_VERSION = 'class-fee-v1';
-const RUNTIME_CACHE = 'class-fee-runtime-v1';
+const CACHE_VERSION = 'class-fee-v2';
+const RUNTIME_CACHE = 'class-fee-runtime-v2';
 
 const PRECACHE_URLS = [
   './',
@@ -10,7 +10,7 @@ const PRECACHE_URLS = [
   './js/auth.js',
   './js/database.js',
   './js/app.js',
-  './assets/icons/icon.svg'
+  './pwa-icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
