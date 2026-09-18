@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 管理者判定：
+    //   優先使用 UID 白名單（{{ADMIN_UID_1}} 等請替換成 Firebase Console 的真實 UID）
+    //   若要以 email / displayName 作為最高管理者授權（與 ClassDataContext regex 對齊），
+    //   請將下方備註的 || 條件取消註解。
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.uid in ['{{ADMIN_UID_1}}', '{{ADMIN_UID_2}}', '{{ADMIN_UID_3}}']
+        // || (request.auth.token.email is string && request.auth.token.email.matches('.*(zejun|zejyun|zejin|zejeng).*'))
+        // || (request.auth.token.name is string && request.auth.token.name.matches('.*(則鈞|則鈞爸爸).*'))
+      );
+    }
+
+    // 收支紀錄：管理者讀寫
+    match /transactions/{txId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 學生名單：管理者讀寫
+    match /students/{stuId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 系統設定（繳費項目等）：管理者讀寫
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 其餘所有路徑預設關閉，避免個資外洩（0 跨境個資）
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
